@@ -1,71 +1,80 @@
 # CLAUDE.md
 
-This repo is a small TextVQA/Qwen3-VL experiment project. Treat it as a constrained research codebase, not a general refactor target.
+This branch is for research memory and orchestration only. It is not the implementation branch.
 
-## Current Goal
+## Mission
 
-Improve `textvqa_val` exact match while respecting the project constraints:
+Help improve TextVQA / Qwen3-VL experiment quality by keeping decisions, evidence, and worker coordination clean. Do not mix source-code work into this branch.
 
-- Training must fit the stated time budget.
-- Test-time latency/FLOPs should stay within the base-model budget.
-- Final claims need evidence over seeds, not one-off terminal output.
+## Default Behavior
 
-The immediate engineering priority is harness work: make runs reproducible and collect evidence. Do not change model behavior unless the task explicitly says so.
+- Act as orchestrator.
+- Use ARA to keep research state current.
+- Use `panel-as-worker` for code edits, experiment launch, and monitoring.
+- Keep large artifacts on the server and cite paths from ARA.
+- Ask before destructive git operations or deleting remote branches.
 
-## Repo Map
+## Skill Usage
 
-- `configs/vlm_textvqa_lora.yaml`: baseline training config.
-- `prepare_textvqa.py`: prepares TextVQA prompts and cached dataset.
-- `train_textvqa_qwen3vl.py`: LoRA training script.
-- `merge_lora.py`: merges adapter into a standalone model.
-- `run_prepare.sh`, `run_train.sh`, `run_merge_lora.sh`, `eval_qwen.sh`: public entrypoints.
-- `lmms-eval/`: vendored evaluation dependency. Avoid editing unless the task explicitly targets eval internals.
-- `ara/`: lightweight research memory and evidence ledger.
-- `configs/experiments/`: config variants. Parameter-only experiments belong here, not in separate branches.
-- `agent-prompts/`: reusable prompts/contracts for worker agents.
+Use local project skills from `.codex/skills/`:
 
-## Hard Rules
+```text
+research-manager   update ARA after meaningful research turns
+panel-as-worker    launch/monitor pane workers and preserve captures
+rigor-reviewer     audit ARA quality and evidence strength
+compiler           rebuild/compile a larger ARA from source material
+```
 
-- Keep edits narrowly scoped to the assigned task.
-- Do not touch `lmms-eval/` unless explicitly instructed.
-- Do not start long training or full evaluation unless explicitly instructed.
-- Do not overwrite or delete `outputs/`, `results/`, or `data/`.
-- Do not commit large artifacts, model weights, prepared datasets, logs, or submissions.
-- Preserve compatibility with the public entrypoints unless the task says otherwise.
-- If a run result is mentioned, include the exact command, seed, config, commit, output path, and metric source.
+`skills/` contains the versioned copies. `.codex/skills/` contains active copies. Keep them synchronized by copying, not symlinking.
 
-## Worker Contract
+## Worker Delegation
 
-When assigned a task, start by restating:
+For code or experiment work, prepare a worker prompt in `agent-prompts/` or inline with:
 
-- Goal
-- Allowed files
-- Files you expect to inspect
-- Whether training/eval is allowed
+```text
+Role:
+Goal:
+Allowed files:
+Forbidden actions:
+Task:
+Checks:
+Required final line: DONE <role>
+```
 
-End with:
+Launch with:
 
-- Changed files
-- Behavior changes, if any
-- Checks run
-- Risks or assumptions
-- Suggested next step
+```bash
+.codex/skills/panel-as-worker/scripts/rmux_worker.sh \
+  --session <session> \
+  --role <role> \
+  --prompt <prompt-file> \
+  --workdir <code-worktree> \
+  --wait
+```
 
-If you need to modify files outside the allowed set, stop and ask.
+Monitor with:
 
-## Harness Direction
+```bash
+.codex/skills/panel-as-worker/scripts/rmux_dashboard.sh --open
+```
 
-Preferred first changes:
+Review worker output and diffs before recording conclusions.
 
-- Save training metrics from `trainer.train()` into the output directory.
-- Support explicit `RUN_ID`, `OUTPUT_DIR`, `PREPARED_DATA_DIR`, and `RESULTS_DIR`.
-- Add a collection script that extracts `exact_match`, training runtime, completed steps, commit, config, and result path.
-- Keep real run artifacts under `/data/...` on the server; keep only lightweight summaries in git.
+## Evidence Standard
 
-## Experiment Hygiene
+A result is recordable only if it has:
 
-- Use git branches or worktrees for conflicting code directions.
-- Use YAML files under `configs/experiments/` for pure parameter variants.
-- Record real results in `ara/evidence/results.csv`.
-- Record decisions, failed ideas, and pivots in `ara/trace/`.
-- Do not turn an unverified idea into a claim.
+- run id
+- branch and commit
+- config path/snapshot
+- seed
+- run root
+- metric source path
+- metric value
+- relevant failure or log summary if applicable
+
+Store confirmed numeric rows in `ara/evidence/results.csv`. Store narrative notes in `ara/trace/sessions/`.
+
+## Current Research Note
+
+The first OCR16 run did not show improvement. The leading explanation is train/eval prompt mismatch: OCR tokens were included during training, while the evaluated task was `textvqa_val` with OCR disabled. The next low-cost check is eval-only comparison using `textvqa_val_ocr` for both the OCR16 merged model and baseline merged models.
