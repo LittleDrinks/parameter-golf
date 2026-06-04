@@ -1,93 +1,31 @@
 # CLAUDE.md
 
-This branch is for research memory and orchestration only. It is not the implementation branch.
+This branch is for research memory and orchestration only. Read `AGENTS.md` first; it is the canonical policy for this repository.
 
-## Mission
+## Claude-Specific Checklist
 
-Help improve TextVQA / Qwen3-VL experiment quality by keeping decisions, evidence, and worker coordination clean. Do not mix source-code work into this branch.
-
-## Default Behavior
-
-- Act as orchestrator.
-- Use ARA to keep research state current.
+- Act as orchestrator unless the user explicitly asks for direct edits.
+- Keep this branch records-only: ARA, skills, prompt contracts, and onboarding docs.
+- Use `research-manager` for meaningful ARA updates.
 - Use `panel-as-worker` for code edits, experiment launch, and monitoring.
-- Keep large artifacts on the server and cite paths from ARA.
-- Ask before destructive git operations or deleting remote branches.
+- Require every experiment to run in its own git worktree. No shared main checkout experiments.
+- Use `ssh smYuHangLab2` for GPU/server forensics and runs; inspect first, modify or launch only with explicit authorization.
+- Store heavy artifacts on the server, usually under `/data/zsm/parameter-golf/runs/<run_id>`. Record paths and metrics in ARA, not raw artifacts.
 
-## Compute Resource
+## Minimal Worker Pattern
 
-Use `ssh smYuHangLab2` for server-side GPU work and experiment forensics. The alias points to user `zsm` on `58.199.164.190:50002`.
-
-Important paths:
-
-```text
-/home/zsm/parameter-golf
-/home/zsm/pg-worktrees/pg-harness
-/data/zsm/parameter-golf/runs/<run_id>
-```
-
-Inspect first; launch or modify only when explicitly authorized. Keep large artifacts on the server and record paths in ARA.
-
-## Skill Usage
-
-Use local project skills from `.codex/skills/`:
-
-```text
-research-manager   update ARA after meaningful research turns
-panel-as-worker    launch/monitor pane workers and preserve captures
-rigor-reviewer     audit ARA quality and evidence strength
-compiler           rebuild/compile a larger ARA from source material
-```
-
-`skills/` contains the versioned copies. `.codex/skills/` contains active copies. Keep them synchronized by copying, not symlinking.
-
-## Worker Delegation
-
-For code or experiment work, prepare a worker prompt in `agent-prompts/` or inline with:
-
-```text
-Role:
-Goal:
-Allowed files:
-Forbidden actions:
-Task:
-Checks:
-Required final line: DONE <role>
-```
-
-Launch with:
+Create or reuse a prompt from `agent-prompts/`, then launch against the experiment worktree:
 
 ```bash
 .codex/skills/panel-as-worker/scripts/rmux_worker.sh \
   --session <session> \
   --role <role> \
   --prompt <prompt-file> \
-  --workdir <code-worktree> \
+  --workdir <experiment-worktree> \
   --wait
 ```
 
-Monitor with:
-
-```bash
-.codex/skills/panel-as-worker/scripts/rmux_dashboard.sh --open
-```
-
-Review worker output and diffs before recording conclusions.
-
-## Evidence Standard
-
-A result is recordable only if it has:
-
-- run id
-- branch and commit
-- config path/snapshot
-- seed
-- run root
-- metric source path
-- metric value
-- relevant failure or log summary if applicable
-
-Store confirmed numeric rows in `ara/evidence/results.csv`. Store narrative notes in `ara/trace/sessions/`.
+Worker prompts must include allowed files, forbidden actions, checks, and final `DONE <role>`. Review worker output and diffs before updating ARA claims.
 
 ## Current Research Note
 

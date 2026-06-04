@@ -25,7 +25,26 @@ Codex is the orchestrator by default.
 - Decide the next smallest falsifying check.
 - Inspect evidence and summarize results.
 - Delegate code-writing, experiment launch, and monitoring to `panel-as-worker` unless the user explicitly asks Codex to edit directly.
-- Keep implementation work on separate code branches/worktrees.
+- Keep implementation work on separate code branches/worktrees. Every experiment must use its own git worktree to avoid source, config, and artifact contamination.
+
+
+## Worktree Requirement
+
+Every experiment must run from a dedicated git worktree. Do not reuse the main checkout or the ARA records branch for experiments.
+
+Required pattern:
+
+```bash
+git worktree add /home/zsm/pg-worktrees/<experiment-id> -b <experiment-branch> <base-branch>
+```
+
+Rules:
+
+- One experiment idea or run family per worktree.
+- Keep code/config changes inside that experiment worktree and branch.
+- Store heavy artifacts under `/data/zsm/parameter-golf/runs/<run_id>`, not inside the git tree.
+- Record the worktree path, branch, commit, config, seed, and run root in ARA before interpreting results.
+- If a worker needs to edit code, launch it with `panel-as-worker` using that experiment worktree as `--workdir`.
 
 ## Project Skills
 
