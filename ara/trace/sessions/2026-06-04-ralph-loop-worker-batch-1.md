@@ -212,3 +212,48 @@ OCR16 remains ahead of the best observed aligned baseline by:
 ```
 
 Remaining seed robustness gap: baseline seed3 aligned OCR eval is still missing.
+
+## Seed3 OCR eval follow-up
+
+The remaining seed robustness gap was closed with a second serial GPU eval after GPU2 was rechecked as available.
+
+Run:
+
+```text
+run_id: eval_baseline_seed3_textvqa_val_ocr
+worktree: /home/zsm/pg-worktrees/pg-seed-robustness-ocr
+branch: exp/seed-robustness-ocr
+commit: d659cbdf335a66f43e835dd2c3899ff76edeb5d6
+task: textvqa_val_ocr
+model: /data/zsm/parameter-golf/outputs/textvqa_qwen3vl_lora_seed3/merged
+run_root: /data/zsm/parameter-golf/runs/eval_baseline_seed3_textvqa_val_ocr
+result_json: /data/zsm/parameter-golf/runs/eval_baseline_seed3_textvqa_val_ocr/eval/textvqa_qwen3vl_lora_seed3__merged/20260604_224425_results.json
+exact_match: 0.7154200000000039
+stderr: 0.006017714457953059
+```
+
+Safety:
+
+- One GPU job only.
+- No training.
+- No seed1/seed2 relaunch.
+- No unrelated process kill.
+
+Seed robustness summary:
+
+```text
+baseline seed1 textvqa_val_ocr = 0.7134200000000036
+baseline seed2 textvqa_val_ocr = 0.7133600000000039
+baseline seed3 textvqa_val_ocr = 0.7154200000000039
+baseline aligned mean          = 0.7140666666666705
+ocr16 seed1 textvqa_val_ocr    = 0.7262000000000036
+```
+
+Interpretation:
+
+OCR16 remains above all three aligned baseline OCR evals:
+
+```text
+delta vs best baseline OCR = 0.010780000000000012
+delta vs baseline OCR mean = 0.012133333333333103
+```

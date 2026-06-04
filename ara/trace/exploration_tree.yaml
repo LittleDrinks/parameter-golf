@@ -228,17 +228,21 @@ questions:
           caveat: worker did not write status.json for this analysis; summary.json/report exist and were verified.
       - id: exp-seed-robustness-controls
         type: analysis
-        status: active
+        status: completed
         description: Complete aligned OCR eval for baseline seed1/seed3 or a cheaper subset check to estimate whether the OCR16 advantage is robust to baseline seed variance.
         falsifying_check: If another baseline seed with OCR-at-eval reaches within 0.001 of OCR16 aligned eval, treat OCR16 seed1 as inconclusive and require repeat seed before new OCR variants.
         cost: medium; eval-only GPU
         latest_result:
           seed1_textvqa_val_ocr: 0.7134200000000036
           seed2_textvqa_val_ocr: 0.7133600000000039
+          seed3_textvqa_val_ocr: 0.7154200000000039
           ocr16_seed1_textvqa_val_ocr: 0.7262000000000036
-          current_delta_vs_best_baseline_ocr: 0.012780000000000035
-          remaining_gap: seed3 aligned OCR eval still missing
-          interpretation: baseline seed1 and seed2 aligned OCR evals are nearly identical, so the OCR16 advantage remains after one additional baseline seed check.
+          baseline_ocr_mean_seed1_2_3: 0.7140666666666705
+          best_baseline_ocr: 0.7154200000000039
+          current_delta_vs_best_baseline_ocr: 0.010780000000000012
+          current_delta_vs_baseline_ocr_mean: 0.012133333333333103
+          remaining_gap: none for baseline seed1-3 aligned OCR evals
+          interpretation: OCR16 remains above all three aligned baseline OCR evals; seed3 narrows but does not eliminate the observed OCR16 advantage.
       - id: exp-seed-robustness-preflight
         type: analysis
         status: completed
@@ -268,3 +272,18 @@ questions:
           result_path: /data/zsm/parameter-golf/runs/eval_baseline_seed1_textvqa_val_ocr/eval/textvqa_qwen3vl_lora_seed1__merged/20260604_221119_results.json
           interpretation: Baseline seed1 aligned OCR eval matches seed2 aligned OCR eval within 0.00006; OCR16 remains +0.01278 over the best aligned baseline observed so far.
         note: Dedicated worktree branch committed the dataset_path patch. Server-side push failed due missing GitHub credentials, which is expected for the public shared server per user instruction; commit is sufficient for server record and manual push can be done from VS Code credential environment.
+      - id: exp-baseline-seed3-eval-ocr
+        type: analysis
+        status: completed
+        description: Serial GPU eval of baseline seed3 merged model on aligned `textvqa_val_ocr`.
+        worktree: /home/zsm/pg-worktrees/pg-seed-robustness-ocr
+        branch: exp/seed-robustness-ocr
+        commit: d659cbdf335a66f43e835dd2c3899ff76edeb5d6
+        remote_run_root: /data/zsm/parameter-golf/runs/eval_baseline_seed3_textvqa_val_ocr
+        result:
+          metric: textvqa_val_ocr exact_match
+          value: 0.7154200000000039
+          stderr: 0.006017714457953059
+          result_path: /data/zsm/parameter-golf/runs/eval_baseline_seed3_textvqa_val_ocr/eval/textvqa_qwen3vl_lora_seed3__merged/20260604_224425_results.json
+          interpretation: Baseline seed3 is the strongest aligned OCR baseline so far, but OCR16 remains ahead by +0.01078 exact_match.
+        note: Ran as the only zsm GPU eval on GPU2 after confirming no zsm train/eval process. No training, no process kills, no seed1/seed2 relaunch.
