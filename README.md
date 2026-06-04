@@ -124,11 +124,13 @@ The merged model is saved to `outputs/textvqa_qwen3vl_lora_seed1/merged` by defa
 Evaluate the merged model:
 
 ```bash
-MODEL_PATH=./outputs/textvqa_qwen3vl_lora_seed1/merged bash eval_qwen.sh
+# MODEL_PATH=./outputs/textvqa_qwen3vl_lora_seed1/merged bash eval_qwen.sh
+CUDA_VISIBLE_DEVICES=0 MODEL_PATH=./outputs/textvqa_qwen3vl_lora_seed1/merged bash eval_qwen.sh
 ```
 
 Evaluate the base model:
 
 ```bash
-MODEL_PATH=Qwen/Qwen3-VL-2B-Instruct bash eval_qwen.sh
+# MODEL_PATH=Qwen/Qwen3-VL-2B-Instruct bash eval_qwen.sh
+CUDA_VISIBLE_DEVICES=0 MODEL_PATH=Qwen/Qwen3-VL-2B-Instruct bash eval_qwen.sh
 ```
