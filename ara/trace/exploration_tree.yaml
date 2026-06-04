@@ -7,6 +7,31 @@ questions:
         type: engineering
         status: proposed
         description: Save train metrics, eval metrics, config snapshot, and git state for each run.
+      - id: exp-stage0-worker-reliability
+        type: engineering
+        status: completed
+        description: Verify 3 consecutive worker tasks have durable prompt/capture/run-root metadata and no cross-run process interference.
+        evidence:
+          worker_tasks:
+            - session: pg-eval-baseline-seed2-start
+              prompt: ara/trace/worker-captures/pg-eval-baseline-seed2-start-prompt.md
+              final_capture: ara/trace/worker-captures/pg-eval-baseline-seed2-start-final.txt
+              run_root: /data/zsm/parameter-golf/runs/eval_baseline_seed2_textvqa_val_ocr
+              run_root_files: command.sh, env.txt, git_commit.txt, git_diff.patch, pid.txt, logs/stdout.log, logs/stderr.log, status.json
+              interference: none; first shell quoting attempt launched no process, later pid.txt repaired to Python lmms_eval PID 1259059
+            - session: pg-stage3-sample-evidence
+              prompt: ara/trace/worker-captures/pg-stage3-sample-evidence-prompt.md
+              final_capture: ara/trace/worker-captures/pg-stage3-sample-evidence-final.txt
+              run_root: /data/zsm/parameter-golf/runs/stage3_textvqa_val_ocr_sample_evidence
+              run_root_files: command.sh, env.txt, git_commit.txt, git_diff.patch, pid.txt, logs/build.log, status.json
+              interference: none; no GPU/process management actions
+            - session: pg-stage3-sample-evidence-repair
+              prompt: ara/trace/worker-captures/pg-stage3-sample-evidence-repair-prompt.md
+              final_capture: ara/trace/worker-captures/pg-stage3-sample-evidence-repair-final.txt
+              run_root: /data/zsm/parameter-golf/runs/stage3_textvqa_val_ocr_sample_evidence
+              run_root_files: command.sh, env.txt, git_commit.txt, git_diff.patch, pid.txt, logs/rebuild.log, status.json
+              interference: none; repaired evidence artifact using cached Arrow validation data, no GPU/process management actions
+          acceptance: 3 consecutive hardened worker tasks have complete prompt/capture/run-root metadata; zero cross-run kills or GPU contention.
   - id: q-ocr-001
     title: Do OCR tokens improve TextVQA exact match?
     status: active
@@ -26,16 +51,102 @@ questions:
           interpretation: noisy loss with downward overall trend; no demonstrated improvement over baseline seed1; likely train/eval OCR prompt mismatch
       - id: exp-ocr16-eval-ocr
         type: analysis
-        status: proposed
+        status: completed
         description: Eval existing ocr16_seed1 merged model with TASK=textvqa_val_ocr to test prompt/eval alignment without retraining.
+        worktree: /home/zsm/pg-worktrees/pg-eval-ocr16-ocr
+        branch: exp/eval-ocr16-ocr
+        commit: 101959c882dd9d05be79668f80456da038c01c77
+        remote_run_root: /data/zsm/parameter-golf/runs/eval_ocr16_seed1_textvqa_val_ocr
+        result:
+          metric: textvqa_val_ocr exact_match
+          value: 0.7262000000000036
+          stderr: 0.005938970135743878
+          result_path: /data/zsm/parameter-golf/runs/eval_ocr16_seed1_textvqa_val_ocr/eval/outputs__merged/20260604_193246_results.json
+          interpretation: OCR16 aligned OCR eval beats best baseline seed2 on the same OCR eval by +0.012840000000000036 exact_match; proceed with OCR direction only through Stage 3 sample-level evidence before any new training variant.
+        note: Patched textvqa_val_ocr.yaml in isolated worktree only to use dataset_path lmms-lab/textvqa; eval completed on GPU2 at 2026-06-04 19:52 CST.
       - id: exp-baseline-eval-ocr
         type: analysis
-        status: proposed
+        status: completed
         description: Eval existing baseline merged models with TASK=textvqa_val_ocr for a fair OCR-at-eval comparison.
+        worktree: /home/zsm/pg-worktrees/pg-eval-baseline-ocr
+        branch: exp/eval-baseline-ocr
+        commit: 101959c882dd9d05be79668f80456da038c01c77
+        remote_run_root: /data/zsm/parameter-golf/runs/eval_baseline_seed2_textvqa_val_ocr
+        result:
+          metric: textvqa_val_ocr exact_match
+          value: 0.7133600000000039
+          stderr: 0.00602570858180051
+          result_path: /data/zsm/parameter-golf/runs/eval_baseline_seed2_textvqa_val_ocr/eval/textvqa_qwen3vl_lora_seed2__merged/20260604_195729_results.json
+          interpretation: Baseline seed2 with OCR-at-eval improves over its non-OCR eval but remains below OCR16 aligned eval.
+        note: Best baseline seed2 OCR eval completed after OCR16 completion. Run root records command/env/git/pid/logs/status; pid.txt records Python lmms_eval PID 1259059 and launcher_pid records bash parent 1259057.
+      - id: decision-ocr-stage2-continue
+        type: decision
+        status: completed
+        description: Continue OCR direction after aligned eval because OCR16 exceeds best baseline seed2 on textvqa_val_ocr.
+        evidence:
+          ocr16_exact_match: 0.7262000000000036
+          baseline_seed2_exact_match: 0.7133600000000039
+          delta: 0.012840000000000036
+          minimum_positive_delta: 0.001
+        next_gate: passed; repaired Stage 3 sample-level evidence exists before any new OCR training variants.
+      - id: exp-stage3-sample-evidence
+        type: analysis
+        status: completed
+        description: Build per-sample TextVQA OCR evidence with question, prediction, gold answers, OCR tokens, prompt snapshot, and lmms-eval-compatible scores.
+        remote_run_root: /data/zsm/parameter-golf/runs/stage3_textvqa_val_ocr_sample_evidence
+        artifact:
+          jsonl: /data/zsm/parameter-golf/runs/stage3_textvqa_val_ocr_sample_evidence/samples_textvqa_val_ocr_ocr16_vs_baseline_seed2.jsonl
+          summary: /data/zsm/parameter-golf/runs/stage3_textvqa_val_ocr_sample_evidence/summary.json
+          build_log: /data/zsm/parameter-golf/runs/stage3_textvqa_val_ocr_sample_evidence/logs/build.log
+          repair_log: /data/zsm/parameter-golf/runs/stage3_textvqa_val_ocr_sample_evidence/logs/rebuild.log
+        result:
+          total_samples: 5000
+          ocr16_better: 229
+          baseline_seed2_better: 149
+          tied: 4622
+          ocr16_exact_match_mean: 0.7262000000000036
+          baseline_seed2_exact_match_mean: 0.7133600000000039
+          aggregate_match: true
+          prompt_snapshot: matches utils.py comma-separated OCR-token prompt
+          scoring: fractional TextVQA accuracy via EvalAIAnswerProcessor and other-answer matching rule
+        note: Initial Stage 3 artifact used boolean normalized matches and space-joined OCR prompt snapshots; repair rebuilt all 5000 records from cached Arrow validation data and now matches lmms-eval aggregate means to floating precision.
       - id: exp-ocr32
         type: experiment
-        status: proposed
+        status: deferred
         config: configs/experiments/ocr32.yaml
+        falsifying_check: Do not train until Stage 4 planning selects a concrete OCR variant with an eval-only or short-run check; reject if expected textvqa_val_ocr delta is below +0.003 over OCR16 aligned eval or if sample evidence shows gains are dominated by answer-style artifacts.
+      - id: exp-ocr-recoverable-errors
+        type: analysis
+        status: completed
+        description: Compare baseline predictions, OCR tokens, and gold answers to estimate how many validation failures are recoverable by OCR-token prompting before retraining.
+        remote_note: /data/zsm/parameter-golf/runs/analysis_ocr_recoverable/ocr_analysis_note_2026-06-04.md
+        result:
+          recoverable_failure_estimate: unavailable
+          reason: Validation gold/OCR tokens for TextVQA val are not cached locally; result JSONs contain aggregate metrics and submissions only.
+      - id: exp-answer-style-alignment
+        type: analysis
+        status: proposed
+        description: Compare short-answer prompt/generation variants on existing merged models to isolate exact-match answer-style effects from training changes.
+        falsifying_check: Run eval-only prompt/generation variants on existing OCR16 and baseline seed2 merged models; stop if OCR16 advantage disappears or if any prompt-only baseline reaches within 0.001 of OCR16 aligned eval.
+        minimum_acceptable_delta: +0.001 over baseline seed2 textvqa_val_ocr for preserving the OCR-training hypothesis; +0.003 for justifying a new training run.
+      - id: exp-prompt-alignment-variant
+        type: experiment
+        status: planned
+        description: Train or fine-tune only with prompt text exactly matching textvqa_val_ocr prompt construction.
+        falsifying_check: First run a no-training prompt reproduction check on existing models; launch training only if reproduced prompts preserve OCR16 > baseline seed2 and if the current train/eval prompt mismatch is the only unresolved prompt variable.
+        minimum_acceptable_delta: +0.003 exact_match over eval_ocr16_seed1_textvqa_val_ocr after same textvqa_val_ocr eval; stop if delta <= 0 or stderr-overlapped with no sample-level wins.
+      - id: exp-question-relevant-ocr-selection
+        type: experiment
+        status: planned
+        description: Replace first-16 OCR token inclusion with question-relevant OCR token selection.
+        falsifying_check: Offline sample-level oracle/filter audit must show more OCR16-fixable baseline failures than OCR-selection-induced regressions; do not train if selected tokens omit gold-supporting OCR in more than 10% of current OCR16 wins.
+        minimum_acceptable_delta: +0.003 exact_match over eval_ocr16_seed1_textvqa_val_ocr, with sample evidence showing net new wins on OCR-dependent questions.
+      - id: exp-ocr-dropout
+        type: experiment
+        status: planned
+        description: Randomly drop OCR tokens during training to reduce prompt brittleness while preserving OCR-conditioned gains.
+        falsifying_check: Short-run or ablation must not reduce textvqa_val_ocr below current OCR16 aligned eval by more than 0.001 and must improve non-OCR textvqa_val relative to ocr16_seed1.
+        minimum_acceptable_delta: +0.002 on textvqa_val_ocr or recovery of non-OCR textvqa_val to baseline seed2 while keeping OCR eval advantage.
   - id: q-lora-001
     title: Which LoRA settings improve accuracy under the same inference budget?
     status: proposed
