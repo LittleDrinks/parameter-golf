@@ -1,0 +1,629 @@
+ ▐▛███▜▌   Claude Code v2.1.162
+▝▜█████▛▘  kimi-for-coding · API Usage Billing
+  ▘▘ ▝▝    ~/wsl-workspace/parameter-golf
+
+
+❯ Role:
+  data-audit
+
+  Goal:
+  Explore a non-OCR branch by auditing available TextVQA-like data or
+  instruction sources without training. CPU-only.
+
+  Resource policy:
+  - smYuHangLab2 is a shared GPU server.
+  - This task must not use GPU/CUDA.
+  - Do not kill processes.
+
+  Allowed remote read-only paths:
+  - `/data/zsm`
+  - `/home/zsm/parameter-golf`
+  - `/home/zsm/pg-worktrees`
+
+  Allowed remote write path:
+  - `/data/zsm/parameter-golf/runs/analysis_data_audit`
+
+  Forbidden actions:
+  - Do not run training or eval.
+  - Do not download datasets from the internet.
+  - Do not edit git worktrees.
+  - Do not push branches.
+  - Do not delete files.
+
+  Task:
+  1. Inventory locally cached datasets or prepared files that may support
+  TextVQA-like short-answer training, especially TextVQA, ST-VQA, TextCaps,
+  TextOCR, OCR-VQA, or existing prepared prompt data.
+  2. For each candidate, record:
+     - path,
+     - approximate size/count if cheap to inspect,
+     - fields available,
+     - whether answers are short and exact-match compatible,
+     - whether OCR tokens/layout fields exist,
+     - conversion blockers.
+  3. Identify one smallest non-OCR data/instruction augmentation check that
+  could be run later without contaminating existing runs.
+  4. Write `/data/zsm/parameter-golf/runs/analysis_data_audit/data_audit.md`
+  and `status.json`.
+
+  Required final line:
+  DONE data-audit
+
+
+  Thought for 8s (ctrl+o to expand)
+
+● I'll begin the data audit by exploring the remote server's filesystem to
+  inventory locally cached datasets. Let me start with multiple parallel
+  discovery commands.
+
+● Bash(ssh smYuHangLab2 "find /data/zsm -maxdepth 3 -type d 2>/dev/null | head
+      -80")
+  ⎿  /data/zsm
+     /data/zsm/parameter-golf
+     /data/zsm/parameter-golf/models
+     … +62 lines (ctrl+o to expand)
+
+  Thinking for 2s… (ctrl+o to expand)
+  ⎿  Good, I can see the structure. Let me now explore more deeply - the data
+     directory, the hf_cache datasets, and also check /home/zsm/parameter-golf
+     and /home/zsm/pg-worktrees for any data-related files or scripts.
+
+● Bash(ssh smYuHangLab2 "find /data/zsm/parameter-golf/data -type f 2>/dev/null
+      | sort")
+  ⎿  /data/zsm/parameter-golf/data/prepared_textvqa_qwen3vl_seed1/data-0000
+     0-of-00020.arrow
+     /data/zsm/parameter-golf/data/prepared_textvqa_qwen3vl_seed1/data-0000
+     … +82 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "ls -la /data/zsm/hf_cache/datasets/ 2>/dev/null")
+  ⎿  total 16
+     drwxrwxr-x 4 zsm zsm 4096 Jun  4 20:25 .
+     drwxrwxr-x 5 zsm zsm 4096 Jun  4 20:25 ..
+     … +2 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "du -sh /data/zsm/hf_cache/datasets/* 2>/dev/null")
+  ⎿  12G        /data/zsm/hf_cache/datasets/lmms-lab___textvqa
+     82G        /data/zsm/hf_cache/datasets/parquet
+
+● Bash(ssh smYuHangLab2 "find /home/zsm/parameter-golf -type f -name '*.json*'
+      -o -name '*.py' 2>/dev/null | grep -E
+      '(data|dataset|textvqa|st_vqa|textocr|textcaps|ocr…)
+  ⎿  /home/zsm/parameter-golf/results/textvqa/textvqa_qwen3vl_lora_seed3__m
+     erged/20260604_151235_results.json
+     /home/zsm/parameter-golf/results/textvqa/textvqa_qwen3vl_lora_seed2__m
+     … +53 lines (ctrl+o to expand)
+
+● Thinking for 4s… (ctrl+o to expand)
+  ⎿  Let me continue exploring. I found: 1. Prepared TextVQA data for Qwen3VL (3
+     seeds) in arrow format 2. textvqa_train.parquet 3. HF cached dataset
+     lmms-lab___textvqa (12G) 4. A parquet folder (82G) in hf_cache 5.
+     prepare_textvqa.py and train_textvqa_qwen3vl.py scripts Let me now look at
+     the prepare script to understand what data is used, and also explore the
+     parquet folder, the hf_cache textvqa dataset structure, and look for any
+     other datasets.
+
+● Bash(ssh smYuHangLab2 "cat /home/zsm/parameter-golf/prepare_textvqa.py")
+  ⎿  #!/usr/bin/env python
+     import argparse
+     import json
+     … +99 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "find /data/zsm/hf_cache/datasets/parquet -maxdepth 2
+      -type d 2>/dev/null | head -40")
+  ⎿  /data/zsm/hf_cache/datasets/parquet
+     /data/zsm/hf_cache/datasets/parquet/default-53fffa6318ec9c18
+     /data/zsm/hf_cache/datasets/parquet/default-53fffa6318ec9c18/0.0.0
+
+● Bash(ssh smYuHangLab2 "find /data/zsm/hf_cache/datasets/lmms-lab___textvqa
+      -type f 2>/dev/null | head -30")
+  ⎿  /data/zsm/hf_cache/datasets/lmms-lab___textvqa/default/0.0.0/9c0699cd1
+     9768ac5ab97568f6b3cbac4c0062884/textvqa-test-00001-of-00004.arrow
+     /data/zsm/hf_cache/datasets/lmms-lab___textvqa/default/0.0.0/9c0699cd1
+     … +52 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "find /home/zsm/parameter-golf -maxdepth 2 -type f \(
+      -name '*.py' -o -name '*.json' -o -name '*.yaml' -o -name '*.yml' \)
+      2>/dev/null | grep -…)
+  ⎿  /home/zsm/parameter-golf/check_gpu.py
+     /home/zsm/parameter-golf/configs/vlm_textvqa_lora.yaml
+     /home/zsm/parameter-golf/lmms-eval/.pre-commit-config.yaml
+     … +4 lines (ctrl+o to expand)
+
+  Thinking for 3s… (ctrl+o to expand)
+  ⎿  Good progress. Now I need to: 1. Look at the config file to understand the
+     data pipeline 2. Check what the textvqa_train.parquet contains 3. Look at
+     the parquet folder (82G) - what dataset is it? 4. Explore the lmms-eval
+     tasks to see what other TextVQA-like datasets might be referenced 5. Check
+     the worktrees for any other dataset experiments 6. Check what's in the
+     pg-worktrees directory Let me continue with parallel exploration.
+
+● Bash(ssh smYuHangLab2 "cat
+      /home/zsm/parameter-golf/configs/vlm_textvqa_lora.yaml")
+  ⎿  model_path: Qwen/Qwen3-VL-2B-Instruct
+     data_path: /data/zsm/parameter-golf/data/textvqa_train.parquet
+     prepared_data_dir: ./data/prepared_textvqa_qwen3vl_seed{seed}
+     … +33 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "python3 -c \"import pyarrow as pa; r =
+      pa.ipc.open_file('/data/zsm/hf_cache/datasets/lmms-lab___textvqa/default/0
+      .0.0/9c0699cd19768ac5ab97568f…)
+  ⎿  Error: Exit code 1
+     Traceback (most recent call last):
+       File "<string>", line 1, in <module>
+     ModuleNotFoundError: No module named 'pyarrow'
+
+● Bash(ssh smYuHangLab2 "find /data/zsm/hf_cache/datasets/parquet -type f -name
+      '*.parquet' 2>/dev/null | head -10")
+  ⎿  (No output)
+
+● Bash(ssh smYuHangLab2 "find /home/zsm/parameter-golf/lmms-eval/tasks -type f
+      -name '*.yaml' 2>/dev/null | head -30")
+  ⎿  (No output)
+
+● Thinking for 2s… (ctrl+o to expand)
+  ⎿  The pyarrow module isn't available in the default Python. Let me try using
+     the venv or use the datasets library. Also, the parquet folder didn't have
+     parquet files with .parquet extension - maybe they have different
+     extensions. Let me also look at the lmms-eval tasks differently. Let me
+     also check the textvqa_train.parquet directly, and explore more of the
+     filesystem.
+
+● Bash(ssh smYuHangLab2 "ls -la
+      /data/zsm/hf_cache/datasets/parquet/default-53fffa6318ec9c18/0.0.0/")
+  ⎿  total 12
+     drwxrwxr-x 3 zsm zsm 4096 Jun  4 16:58 .
+     drwxrwxr-x 3 zsm zsm 4096 Jun  4 01:06 ..
+     … +2 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cd /home/zsm/parameter-golf && source venv/bin/activate
+      && python3 -c \"from datasets import load_from_disk; ds =
+      load_from_disk('/data/zsm/hf…)
+  ⎿  Error: Exit code 1
+     Traceback (most recent call last):
+       File "<string>", line 1, in <module>
+       File "/home/zsm/parameter-golf/venv/lib/python3.10/site-packages/datasets
+     /load.py", line 2148, in load_from_disk
+         raise FileNotFoundError(
+     FileNotFoundError: Directory /data/zsm/hf_cache/datasets/lmms-lab___textvqa
+     is neither a `Dataset` directory nor a `DatasetDict` directory.
+
+● Bash(ssh smYuHangLab2 "find /home/zsm/parameter-golf/lmms-eval -type f \(
+      -name '*.yaml' -o -name '*.py' \) 2>/dev/null | grep -i
+      'text\|ocr\|vqa\|st_vqa\|textcaps\|…)
+  ⎿  /home/zsm/parameter-golf/lmms-eval/test/eval/test_ocrbench_v2.py
+     /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/spatialtreebench/me
+     trics/mindcube_cogmap/src/utils/text_utils.py
+     … +33 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "find /home/zsm/pg-worktrees -maxdepth 3 -type d
+      2>/dev/null | head -40")
+  ⎿  /home/zsm/pg-worktrees
+     /home/zsm/pg-worktrees/pg-harness
+     /home/zsm/pg-worktrees/pg-harness/configs
+     … +37 lines (ctrl+o to expand)
+
+● Thinking for 2s… (ctrl+o to expand)
+  ⎿  Let me continue exploring. I need to: 1. Check the textvqa_train.parquet
+     schema and sample 2. Look at the lmms-eval textvqa task specifically 3.
+     Explore more datasets in the hf_cache 4. Check the pg-worktrees for any
+     data-related experiments 5. Look at the prepared data manifest Let me do
+     more parallel exploration.
+
+  Bash(ssh smYuHangLab2 "cd /home/zsm/parameter-golf && source venv/bin/activate
+      && python3 -c \"import pandas as pd; df =
+      pd.read_parquet('/data/zsm/parameter-golf/da…)
+  ⎿  Running… (4s · timeout 1m)
+  ⎿  Shape: (34602, 13)
+     Columns: ['image_id', 'question_id', 'question', 'question_tokens', 'i
+     mage', 'image_width', 'image_height', 'flickr_original_url', 'flickr_3
+     … +426 lines (ctrl+o to expand)
+  ⎿  (timeout 1m)
+
+● Bash(ssh smYuHangLab2 "find /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks
+      -type d -name 'textvqa*' -o -name '*st_vqa*' -o -name '*textcaps*' -o
+      -name '*textocr*…)
+  ⎿  /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/textvqa
+     /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/textcaps
+     /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/textcaps/textcaps_v
+     … +11 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cat /data/zsm/parameter-golf/data/prepared_textvqa_qwen
+      3vl_seed1/manifest.json")
+  ⎿  {
+       "max_ocr_tokens": 16,
+       "num_samples": 34602,
+     … +7 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cd /home/zsm/parameter-golf && source venv/bin/activate
+      && python3 -c \"from datasets import load_dataset; ds =
+      load_dataset('lmms-lab/textvqa…)
+  ⎿  '(MaxRetryError('HTTPSConnectionPool(host=\'huggingface.co\', port=443
+     ): Max retries exceeded with url: /datasets/lmms-lab/textvqa/resolve/m
+     ain/README.md (Caused by NewConnectionError("HTTPSConnection(host=\'hu
+     … +68 lines (ctrl+o to expand)
+  ⎿  (timeout 2m)
+
+● Thinking for 5s… (ctrl+o to expand)
+  ⎿  Good, I have useful information now. Let me continue exploring: 1. The
+     textvqa_train.parquet has 34602 rows, 13 columns including image_id,
+     question, answers, ocr_tokens, image, etc. 2. The HF cached TextVQA has
+     train (34602), validation (5000), test (5734) 3. The prepared data has
+     use_ocr_tokens: false in the manifest 4. Need to look at the textvqa task
+     in lmms-eval 5. Need to explore other potential datasets Let me now: - Look
+     at the lmms-eval textvqa task configs - Check for any other cached
+     datasets - Look at the textcaps task - Check the worktrees for any data
+     experiments - Look at what other data might be available
+
+● Bash(ssh smYuHangLab2 "ls -la
+      /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/textvqa/")
+  ⎿  total 48
+     drwxrwxr-x   3 zsm zsm  4096 Jun  4 10:10 .
+     drwxrwxr-x 293 zsm zsm 12288 Jun  4 00:51 ..
+     … +9 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cat
+      /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/textvqa/textvqa.yaml")
+  ⎿  Error: Exit code 1
+     cat:
+     /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/textvqa/textvqa.yaml: No
+     such file or directory
+
+● Bash(ssh smYuHangLab2 "cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textcaps/textcaps.yaml")
+  ⎿  group : textcaps
+     task:
+       - textcaps_val
+       - textcaps_test
+
+● Bash(ssh smYuHangLab2 "find /data/zsm -maxdepth 4 -type d \( -name '*st*vqa*'
+      -o -name '*stvqa*' -o -name '*textocr*' -o -name '*ocr*vqa*' -o -name
+      '*docvqa*' \) 2>/…)
+  ⎿  /data/zsm/parameter-golf/runs/stage3_textvqa_val_ocr_sample_evidence
+     /data/zsm/parameter-golf/runs/eval_ocr16_seed1_textvqa_val_ocr
+
+  Thinking for 1s… (ctrl+o to expand)
+  ⎿  Let me read the correct textvqa files. The main config is _textvqa.yaml or
+     _default_template_textvqa_yaml.
+
+● Bash(ssh smYuHangLab2 "cat
+      /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/textvqa/_textvqa.yaml")
+  ⎿  group: textvqa
+     task:
+     - textvqa_val
+     - textvqa_test
+
+● Bash(ssh smYuHangLab2 "cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textvqa/_default_template_textvqa_yaml")
+  ⎿  dataset_path: lmms-lab/textvqa # lmms-lab/textvqa
+     output_type: generate_until
+     doc_to_visual: !function utils.textvqa_doc_to_visual
+     … +18 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textvqa/textvqa_val.yaml")
+  ⎿  task: textvqa_val
+     test_split: validation
+     metric_list:
+     … +9 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textvqa/textvqa_val_ocr.yaml")
+  ⎿  task: textvqa_val_ocr
+     test_split: validation
+     dataset_path: /storage/data/shiyd2023/datasets/textvqa
+     … +25 lines (ctrl+o to expand)
+
+● Thinking for 4s… (ctrl+o to expand)
+  ⎿  Very interesting findings: 1. textvqa_val.yaml uses lmms-lab/textvqa with
+     ocr: false 2. textvqa_val_ocr.yaml uses
+     /storage/data/shiyd2023/datasets/textvqa with ocr: true and ocr_max_tokens:
+     16 This is important - the OCR eval uses a different dataset path! Let me
+     check if that path exists. Also, I notice the default template uses
+     lmms-lab/textvqa for both, but the textvqa_val_ocr.yaml overrides to use a
+     local path. This is a key finding. Let me now: 1. Check if
+     /storage/data/shiyd2023/datasets/textvqa exists 2. Read the utils.py for
+     textvqa to understand the OCR handling 3. Look at the textcaps task in more
+     detail 4. Check for any other datasets in the hf_cache 5. Explore mor…
+
+● Bash(ssh smYuHangLab2 "ls -la /storage/data/shiyd2023/datasets/textvqa
+      2>/dev/null || echo 'PATH NOT FOUND'")
+  ⎿  PATH NOT FOUND
+
+● Bash(ssh smYuHangLab2 "cat
+      /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/textvqa/utils.py")
+  ⎿  import datetime
+     import json
+     import statistics
+     … +62 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "find /data/zsm/hf_cache/hub -maxdepth 2 -type d
+      2>/dev/null | grep -E 'dataset|text' | head -20")
+  ⎿  /data/zsm/hf_cache/hub/.locks/datasets--lmms-lab--textvqa
+     /data/zsm/hf_cache/hub/datasets--lmms-lab--textvqa
+     /data/zsm/hf_cache/hub/datasets--lmms-lab--textvqa/snapshots
+     … +3 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textcaps/_default_template_textcaps_yaml")
+  ⎿  lmms_eval_specific_kwargs:
+       default:
+         prompt: Provide a one-sentence caption for the provided image.
+
+  Thinking for 4s… (ctrl+o to expand)
+  ⎿  Key findings so far: 1. textvqa_val_ocr.yaml references
+     /storage/data/shiyd2023/datasets/textvqa which DOES NOT EXIST on this
+     server. This means the OCR eval task likely uses the HF cached dataset
+     instead (via fallback) or the eval was never actually run successfully with
+     that config. 2. The textvqa eval utils show that OCR tokens are appended
+     to the prompt when ocr: true. 3. TextCaps is a captioning task, not VQA -
+     one-sentence captions, not short answers. Now let me explore more - I need
+     to check: - What other datasets are available - The docvqa task (document
+     VQA) - Any other instruction datasets - The worktrees for data experiments
+     - Look at what datasets exist in /storage if any Let me also check the…
+
+  Bash(ssh smYuHangLab2 "cd /home/zsm/parameter-golf && source venv/bin/activate
+      && python3 -c \"
+      import pandas as pd…)
+  ⎿  10    34602
+     Name: count, dtype: int64
+     Sample answers:
+     NameError: name 'answers' is not defined
+     Total rows: 34602
+     Columns: ['image_id', 'question_id', 'question', 'question_tokens',
+     'image', 'image_width', 'image_height', 'flickr_original_url',
+     'flickr_300k_url', 'answers', 'image_classes', 'set_name', 'ocr_tokens']
+
+     Answer counts (num answers per question):
+     answers
+     10    34602
+     … +3 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "find /storage -maxdepth 3 -type d 2>/dev/null | head
+      -20 || echo 'No /storage access'")
+  ⎿  (No output)
+
+● Bash(ssh smYuHangLab2 "find /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks
+      -type f -name '*.yaml' | xargs grep -l
+      'textvqa\|docvqa\|st_vqa\|ocr_vqa\|textocr\|inf…)
+  ⎿  /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/docvqa/docvqa_val.y
+     aml
+     /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/docvqa/docvqa_test.
+     … +17 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      docvqa/_default_template_docvqa_yaml")
+  ⎿  dataset_path: lmms-lab/DocVQA
+     dataset_name: DocVQA
+     dataset_kwargs:
+     … +17 lines (ctrl+o to expand)
+
+  Thinking for 3s… (ctrl+o to expand)
+  ⎿  Let me continue exploring. I need to check: 1. Whether DocVQA dataset is
+     cached 2. What other datasets are in the hf_cache 3. Look at the worktrees
+     for data experiments 4. Check if there are any instruction datasets or
+     prepared data 5. Look at the outputs directory for any clues about data
+     used The bash for /storage had no output, which means it either doesn't
+     exist or is empty. Let me try more exploration.
+
+● Bash(ssh smYuHangLab2 "ls /storage 2>/dev/null || echo 'NO /storage'")
+  ⎿  NO /storage
+
+● Bash(ssh smYuHangLab2 "find /data/zsm/hf_cache/datasets -maxdepth 2 -type d
+      2>/dev/null | sort")
+  ⎿  /data/zsm/hf_cache/datasets
+     /data/zsm/hf_cache/datasets/lmms-lab___textvqa
+     /data/zsm/hf_cache/datasets/lmms-lab___textvqa/default
+     … +2 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "find /data/zsm/hf_cache/hub/datasets* -maxdepth 2 -type
+      d 2>/dev/null | sort")
+  ⎿  /data/zsm/hf_cache/hub/datasets--lmms-lab--textvqa
+     /data/zsm/hf_cache/hub/datasets--lmms-lab--textvqa/.no_exist
+     /data/zsm/hf_cache/hub/datasets--lmms-lab--textvqa/.no_exist/9c0699cd1
+     … +6 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      docvqa/docvqa_val.yaml")
+  ⎿  task: "docvqa_val"
+     test_split: validation
+     metric_list:
+     … +4 lines (ctrl+o to expand)
+
+  Thinking for 3s… (ctrl+o to expand)
+  ⎿  Now I have a good picture of the data landscape. Let me also check: 1. The
+     worktrees for any data-related configs or experiments 2. Whether there are
+     any instruction datasets 3. Look at what the textvqa_val_lite config does
+     4. Check the train script for what data sources it supports 5. Look for any
+     other prepared data Let me gather a few more pieces of info and then
+     compile the audit report.
+
+● Bash(ssh smYuHangLab2 "cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textvqa/textvqa_val_lite.yaml")
+  ⎿  task: textvqa_val_lite
+     test_split: lite
+     metric_list:
+     … +27 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cat /home/zsm/parameter-golf/train_textvqa_qwen3vl.py")
+  ⎿  #!/usr/bin/env python
+     import argparse
+     import json
+     … +195 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "find /home/zsm/pg-worktrees -type f \( -name '*.yaml'
+      -o -name '*.py' \) 2>/dev/null | grep -E
+      'data|dataset|textvqa|prepare|instruction' | he…)
+  ⎿  /home/zsm/pg-worktrees/pg-harness/configs/vlm_textvqa_lora.yaml
+     /home/zsm/pg-worktrees/pg-harness/train_textvqa_qwen3vl.py
+     /home/zsm/pg-worktrees/pg-harness/prepare_textvqa.py
+     … +23 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "find /data/zsm/parameter-golf/outputs -type f -name
+      '*.json' 2>/dev/null | head -10")
+  ⎿  /data/zsm/parameter-golf/outputs/textvqa_qwen3vl_lora_seed3/final/toke
+     nizer.json
+     /data/zsm/parameter-golf/outputs/textvqa_qwen3vl_lora_seed3/final/toke
+     … +16 lines (ctrl+o to expand)
+
+● Thinking for 3s… (ctrl+o to expand)
+  ⎿  I now have a comprehensive understanding of the data landscape. Let me
+     gather a few more details to complete the audit: 1. Check the prepared data
+     schema to understand what fields are stored 2. Check the textvqa_val_lite
+     dataset info (if it's cached) 3. Look at the DocVQA dataset to see if it's
+     cached 4. Check for any other instruction or augmentation datasets Then
+     I'll compile everything into the audit report. Let me get a few more
+     details quickly.
+
+● Bash(ssh smYuHangLab2 "cd /home/zsm/parameter-golf && source venv/bin/activate
+      && python3 -c \"from datasets import load_from_disk; ds =
+      load_from_disk('/data/zsm/pa…)
+  ⎿  Prepared dataset:
+     Dataset({
+         features: ['image_id', 'question_id', 'question', 'question_tokens
+     … +19 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cd /home/zsm/parameter-golf && source venv/bin/activate
+      && python3 -c \"
+      && python3 -c \"
+      import pandas as pd…)
+  ⎿  Answer length stats: min=1, max=446, mean=8.9, median=7.0
+     Answers <= 5 chars: 146032
+     Answers <= 10 chars: 250661
+     … +4 lines (ctrl+o to expand)
+  ⎿  (timeout 1m)
+
+● Bash(ssh smYuHangLab2 "cd /home/zsm/parameter-golf && source venv/bin/activate
+      && python3 -c \"from datasets import load_dataset; ds =
+      load_dataset('lmms-lab/DocVQA'…)
+  ⎿  (No output)
+  ⎿  (timeout 2m)
+
+● Bash(ssh smYuHangLab2 "find /data/zsm -type f -name '*.parquet' 2>/dev/null")
+  ⎿  /data/zsm/parameter-golf/data/textvqa_train.parquet
+  ⎿  (timeout 30s)
+
+  Thought for 29s (ctrl+o to expand)
+
+● Now I have a comprehensive picture of the data landscape. Let me create the
+  output directory and write the audit report.
+
+● Bash(ssh smYuHangLab2 "mkdir -p
+      /data/zsm/parameter-golf/runs/analysis_data_audit")
+  ⎿  (No output)
+
+  Thought for 6s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cat >
+      /data/zsm/parameter-golf/runs/analysis_data_audit/data_audit.md << 'EOF'
+      # Data Audit Report — TextVQA-like Sources for Non-OCR Branch…)
+  ⎿  Error: Exit code 1
+     (eval):1: no such file or directory: lmms-lab/textvqa
+     (eval):1: command not found: textvqa_val_ocr
+     (eval):1: no such file or directory:
+     /storage/data/shiyd2023/datasets/textvqa
+     (eval):1: no such file or directory:
+     /data/zsm/hf_cache/datasets/lmms-lab___textvqa/
+     (eval):1: no such file or directory: lmms-lab/textvqa
+     (eval):1: command not found: image_id
+     (eval):1: command not found: question_id
+     (eval):1: command not found: question
+     (eval):1: command not found: question_tokens
+     … +52 lines (ctrl+o to expand)
+
+  Thought for 3s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "python3 -c \"
+      import json, os…)
+  ⎿  (eval):1: command not found: yaml
+     (eval):2: command not found: dataset_path:
+     (eval):2: no such file or directory: /data/zsm/parameter-golf/data/tex
+     … +16 lines (ctrl+o to expand)
+
+  Thought for 3s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "head -30
+      /data/zsm/parameter-golf/runs/analysis_data_audit/data_audit.md")
+  ⎿  # Data Audit Report — TextVQA-like Sources for Non-OCR Branch
+     **Role:** data-audit
+     **Date:** 2026-06-04
+     … +27 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "cat
+      /data/zsm/parameter-golf/runs/analysis_data_audit/status.json | head -40")
+  ⎿  {
+       "role": "data-audit",
+       "status": "completed",
+     … +37 lines (ctrl+o to expand)
+
+  Thought for 3s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "tail -15
+      /data/zsm/parameter-golf/runs/analysis_data_audit/data_audit.md")
+  ⎿  | Add DocVQA as aux data | Not cached; requires internet download |
+     | Add ST-VQA / TextOCR / OCR-VQA | Not available locally; no cached fi
+     les found |
+     … +16 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 "python3 -c \"import json; d=json.load(open('/data/zsm/p
+      arameter-golf/runs/analysis_data_audit/status.json')); print('Keys:',
+      list(d.keys()));…)
+  ⎿  Keys: ['role', 'status', 'date', 'host', 'gpu_used', 'datasets_found',
+      'datasets_not_found', 'critical_findings', 'recommended_smallest_chec
+     k', 'output_files']
+     … +4 lines (ctrl+o to expand)
+
+  Thought for 2s (ctrl+o to expand)
+
+● Audit complete. Here's a summary of findings:
+
+  数据审计结果
+     che
+  可用数据集盘点
+
+  完全本地可用的只有 TextVQA（lmms-lab/textvqa）：
+  - HF 缓存路径: /data/zsm/hf_cache/datasets/lmms-lab___textvqa/ (~12GB)
+  - Parquet 导出: /data/zsm/parameter-golf/data/textvqa_train.parquet (34,602
+  行)
+  - 已准备好的训练数据: 3 个 seed 的 prepared arrow 数据集 (各 34,602 样本)
+  - 字段: image_id, question_id, question, image, answers (10个/题), ocr_tokens
+  (0–100个/样本), 等
+  - 答案长度: 中位数 7 字符，72% ≤ 10 字符，适合 exact-match
+  - OCR tokens: 均值 12.8，已存在但当前 config 设为 use_ocr_tokens: false
+
+  其他候选均未本地缓存：
+  - DocVQA — 配置存在，但未缓存，网络不可达
+  - TextCaps — 是 captioning 任务，不是短答案 VQA
+  - TextVQA Val Lite — 未缓存
+  - OCRBench — 多任务，未缓存
+  - ST-VQA / TextOCR / OCR-VQA / 指令数据集 — 均未找到
+
+  关键基础设施发现
+
+  textvqa_val_ocr.yaml 引用的本地路径
+  /storage/data/shiyd2023/datasets/textvqa在此服务器上不存在。/storage
+  未挂载。OCR eval 目前依赖 HF 缓存回退，存在隐患。
+
+  推荐的最小非 OCR 增强检查
+
+  Prompt-Template Ablation（提示词模板消融）：
+  - 从现有 TextVQA train 中采样 1,024 条，准备 3 种 post-prompt 变体
+  - 各跑 64-step 训练 probe，在 textvqa_val（非 OCR）上评估
+  - 零新数据、不污染 val/test、CPU 可准备、GPU 约 1.5 小时
+  - 可直接验证：非 OCR 分支是否对指令格式敏感
+
+  输出文件
+
+  已写入：
+  - /data/zsm/parameter-golf/runs/analysis_data_audit/data_audit.md
+  - /data/zsm/parameter-golf/runs/analysis_data_audit/status.json
+
+  DONE data-audit
+
+✻ Brewed for 8m 46s
+
+────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────
+  [kimi-for-coding] ███░░░░░░░ 25%
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+

@@ -141,6 +141,8 @@ questions:
         description: Replace first-16 OCR token inclusion with question-relevant OCR token selection.
         falsifying_check: Offline sample-level oracle/filter audit must show more OCR16-fixable baseline failures than OCR-selection-induced regressions; do not train if selected tokens omit gold-supporting OCR in more than 10% of current OCR16 wins.
         minimum_acceptable_delta: +0.003 exact_match over eval_ocr16_seed1_textvqa_val_ocr, with sample evidence showing net new wins on OCR-dependent questions.
+        latest_evidence: /data/zsm/parameter-golf/runs/analysis_failure_taxonomy/failure_taxonomy.md
+        current_read: weakened; OCR16 wins and baseline wins have similar gold-in-OCR overlap, and many OCR16 losses have the wrong OCR16 prediction present in OCR tokens.
       - id: exp-ocr-dropout
         type: experiment
         status: planned
@@ -164,25 +166,83 @@ questions:
     children:
       - id: exp-answer-style-controls
         type: analysis
-        status: proposed
+        status: active
         description: Eval-only controls for answer style, prompt wording, and generation length on existing merged models.
         falsifying_check: If baseline prompt/generation controls reach within 0.001 exact_match of OCR16 aligned eval, downgrade OCR training as the explanation for the current gain.
         cost: low; no training; existing merged models only
+      - id: exp-answer-style-audit
+        type: analysis
+        status: completed
+        description: CPU-only audit of TextVQA prompt construction, generation controls, and answer-style eval matrix.
+        remote_run_root: /data/zsm/parameter-golf/runs/analysis_answer_style_audit
+        artifact:
+          report: /data/zsm/parameter-golf/runs/analysis_answer_style_audit/answer_style_audit.md
+          status: /data/zsm/parameter-golf/runs/analysis_answer_style_audit/status.json
+        result:
+          headline: max_new_tokens is the smallest zero-code eval-only control; prompt/post_prompt/ocr_max_tokens require custom task YAML plus include_path.
+          ocr16_textvqa_val_ocr: 0.7262
+          baseline_seed2_textvqa_val_ocr: 0.7134
+          blockers_flattened:
+            config_only: max_new_tokens, temperature/top_p, system_prompt, enable_thinking
+            small_script: post_prompt, pre_prompt, ocr_max_tokens via custom task YAML
+            gpu_eval: every matrix row needs a serial GPU eval
+            drop: until token changes and apply_chat_template changes
+          next_smallest_check: serial OCR16 max_new_tokens=32 eval, only if GPU2 remains free and no other user needs it.
       - id: exp-data-augmentation-audit
         type: analysis
-        status: proposed
+        status: active
         description: Audit low-cost data augmentation or instruction-tuning sources for TextVQA-like reading questions, including ST-VQA/TextCaps/TextOCR-derived examples if already available in cache.
         falsifying_check: Do not train if candidate data cannot be converted into the existing short-answer format with answer-normalization compatibility and without adding noisy long-form answers.
         cost: low-to-medium; offline data inspection before any GPU run
+      - id: exp-data-audit
+        type: analysis
+        status: completed
+        description: CPU-only audit of locally available TextVQA-like data and instruction sources.
+        remote_run_root: /data/zsm/parameter-golf/runs/analysis_data_audit
+        artifact:
+          report: /data/zsm/parameter-golf/runs/analysis_data_audit/data_audit.md
+          status: /data/zsm/parameter-golf/runs/analysis_data_audit/status.json
+        result:
+          available: TextVQA cache, TextVQA train parquet, and existing prepared TextVQA datasets.
+          unavailable: DocVQA, ST-VQA, TextOCR, OCR-VQA, OCRBench, and external instruction data are not cached locally or need network.
+          blocker: data-audit had heredoc quoting errors while writing markdown, then recovered; report/status were verified.
+          next_smallest_check: prompt-template ablation on existing TextVQA only; no new dataset before cache/download constraints are addressed.
       - id: exp-visual-grounding-audit
         type: analysis
-        status: proposed
+        status: completed
         description: Check whether current failures are OCR-only, visual-object grounding, layout/spatial, or answer-format failures using the repaired sample-level artifact.
         falsifying_check: If most OCR16 wins are not tied to OCR-token/gold-answer evidence, prioritize prompt/style or LoRA over OCR-selection training.
         cost: low; sample artifact analysis
+        remote_run_root: /data/zsm/parameter-golf/runs/analysis_failure_taxonomy
+        artifact:
+          report: /data/zsm/parameter-golf/runs/analysis_failure_taxonomy/failure_taxonomy.md
+          summary: /data/zsm/parameter-golf/runs/analysis_failure_taxonomy/summary.json
+        result:
+          ocr16_better: 229
+          baseline_better: 149
+          tied: 4622
+          ocr16_win_gold_in_ocr_fraction: 0.8079
+          baseline_win_gold_in_ocr_fraction: 0.7987
+          baseline_win_ocr16_pred_in_ocr_fraction: 0.5235
+          interpretation: weakens question-relevant OCR selection as the immediate next training bet; answer-style and seed robustness controls should come first.
+          caveat: worker did not write status.json for this analysis; summary.json/report exist and were verified.
       - id: exp-seed-robustness-controls
         type: analysis
-        status: proposed
+        status: active
         description: Complete aligned OCR eval for baseline seed1/seed3 or a cheaper subset check to estimate whether the OCR16 advantage is robust to baseline seed variance.
         falsifying_check: If another baseline seed with OCR-at-eval reaches within 0.001 of OCR16 aligned eval, treat OCR16 seed1 as inconclusive and require repeat seed before new OCR variants.
         cost: medium; eval-only GPU
+      - id: exp-seed-robustness-preflight
+        type: analysis
+        status: completed
+        description: CPU-only preflight for serial baseline seed1/seed3 aligned OCR evals.
+        remote_run_root: /data/zsm/parameter-golf/runs/analysis_seed_robustness_preflight
+        artifact:
+          report: /data/zsm/parameter-golf/runs/analysis_seed_robustness_preflight/seed_robustness_preflight.md
+          status: /data/zsm/parameter-golf/runs/analysis_seed_robustness_preflight/status.json
+        result:
+          seed1_merged: /data/zsm/parameter-golf/outputs/textvqa_qwen3vl_lora_seed1/merged
+          seed3_merged: /data/zsm/parameter-golf/outputs/textvqa_qwen3vl_lora_seed3/merged
+          missing: seed1 and seed3 aligned textvqa_val_ocr result JSONs
+          available_gpu_at_preflight: GPU2
+          launch_policy: serial only; seed1 then seed3; start only if GPU2 memory.used < 1000 MiB and no zsm eval/training process is active.

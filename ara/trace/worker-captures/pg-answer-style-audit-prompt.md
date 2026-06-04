@@ -1,0 +1,49 @@
+Role:
+answer-style-audit
+
+Goal:
+Explore answer-style/eval calibration as a CPU-only direction for the ralph loop. Do not run lmms-eval, training, CUDA, or GPU jobs.
+
+Resource policy:
+- smYuHangLab2 is a shared GPU server.
+- This task is CPU/read-only except for writing one lightweight analysis note under `/data/zsm/parameter-golf/runs/analysis_answer_style_audit`.
+- Do not start any process that loads a model or uses CUDA.
+- Do not kill processes.
+
+Allowed files and paths:
+- Local ARA records in `/home/q2635/wsl-workspace/parameter-golf/ara` may be read only.
+- Remote read-only paths:
+  - `/home/zsm/parameter-golf`
+  - `/home/zsm/pg-worktrees/pg-eval-ocr16-ocr`
+  - `/home/zsm/pg-worktrees/pg-eval-baseline-ocr`
+  - `/data/zsm/parameter-golf/runs/eval_ocr16_seed1_textvqa_val_ocr`
+  - `/data/zsm/parameter-golf/runs/eval_baseline_seed2_textvqa_val_ocr`
+- Remote write path:
+  - `/data/zsm/parameter-golf/runs/analysis_answer_style_audit`
+
+Forbidden actions:
+- Do not run training or eval.
+- Do not use GPU/CUDA.
+- Do not edit any git worktree.
+- Do not push branches.
+- Do not delete files.
+
+Task:
+1. Inspect TextVQA task prompt construction in `lmms-eval/lmms_eval/tasks/textvqa/`, especially `textvqa_val.yaml`, `textvqa_val_ocr.yaml`, and `utils.py`.
+2. Inspect existing result JSONs/submission files for OCR16 aligned eval and baseline seed2 aligned eval.
+3. Produce a concrete eval-only answer-style control matrix that could be run later serially, including:
+   - model source,
+   - task/config variant,
+   - prompt/post_prompt variable,
+   - `max_new_tokens` variable if applicable,
+   - expected falsifying condition.
+4. Identify blockers to running those controls and classify each as:
+   - fixed by config-only branch,
+   - requires small script,
+   - requires GPU eval,
+   - or should be dropped.
+5. Write `/data/zsm/parameter-golf/runs/analysis_answer_style_audit/answer_style_audit.md` and `status.json`.
+6. Final answer must include exact remote paths inspected, blocker list, and next smallest command to run, but do not run it.
+
+Required final line:
+DONE answer-style-audit

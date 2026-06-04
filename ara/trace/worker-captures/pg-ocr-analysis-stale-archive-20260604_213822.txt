@@ -1,0 +1,524 @@
+● Thinking for 3s… (ctrl+o to expand)
+  ⎿  The worktree was created successfully. Now I see only ocr16_seed1 in the
+     runs directory. Let me explore the remote filesystem more thoroughly -
+     there might be baseline runs elsewhere. I should also check the worktree
+     status and look for more run directories.
+
+● Bash(ssh smYuHangLab2 'cd /home/zsm/pg-worktrees/pg-ocr-analysis && echo "===
+      WORKTREE PATH ===" && pwd && echo "=== BRANCH ===" && git branch
+      --show-current && echo…)
+  ⎿  === WORKTREE PATH ===
+     /home/zsm/pg-worktrees/pg-ocr-analysis
+     === BRANCH ===
+     … +4 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /data/zsm/parameter-golf/ -maxdepth 3 -type d
+      2>/dev/null | head -50')
+  ⎿  /data/zsm/parameter-golf/
+     /data/zsm/parameter-golf/models
+     /data/zsm/parameter-golf/runs
+     … +19 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /home/zsm/parameter-golf/runs -maxdepth 3 -type f
+      \( -name "*.json" -o -name "*.jsonl" -o -name "*.parquet" -o -name
+      "*.yaml" \) 2>/dev/n…)
+  ⎿  (No output)
+
+● Thinking for 3s… (ctrl+o to expand)
+  ⎿  Let me explore more thoroughly. I found outputs/ directory with baseline
+     runs (seed1, seed2, seed3) and runs/ocr16_seed1. Let me look for JSON files
+     in both areas.
+
+● Bash(ssh smYuHangLab2 'find /data/zsm/parameter-golf/outputs -maxdepth 4 -type
+      f \( -name "*.json" -o -name "*.jsonl" \) 2>/dev/null | sort')
+  ⎿  /data/zsm/parameter-golf/outputs/textvqa_qwen3vl_lora_seed1/final/adap
+     ter_config.json
+     /data/zsm/parameter-golf/outputs/textvqa_qwen3vl_lora_seed1/final/adde
+     … +65 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /data/zsm/parameter-golf/runs/ocr16_seed1
+      -maxdepth 4 -type f \( -name "*.json" -o -name "*.jsonl" -o -name "*.yaml"
+      -o -name "*.parquet"…)
+  ⎿  /data/zsm/parameter-golf/runs/ocr16_seed1/config.yaml
+     /data/zsm/parameter-golf/runs/ocr16_seed1/eval/outputs__merged/2026060
+     4_175118_results.json
+     … +27 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /home/zsm/parameter-golf/runs -maxdepth 4 -type f
+      \( -name "*.json" -o -name "*.jsonl" \) 2>/dev/null | sort')
+  ⎿  (No output)
+
+  Thinking for 3s… (ctrl+o to expand)
+  ⎿  I found the ocr16_seed1 run results. I need to also find baseline eval
+     results. Let me look for them more broadly. The baselines might be in a
+     different location. Let me search for submission and result files across
+  Thought for 3s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /data/zsm/parameter-golf/
+      /home/zsm/parameter-golf/ -maxdepth 5 -type f \( -name "*submission*.json"
+      -o -name "*results*.json" \) 2>/dev/…)
+  ⎿  /data/zsm/parameter-golf/runs/ocr16_seed1/eval/outputs__merged/2026060
+     4_175118_results.json
+     /data/zsm/parameter-golf/runs/ocr16_seed1/eval/submissions/textvqa_sub
+     … +14 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /data/zsm/parameter-golf/
+      /home/zsm/parameter-golf/ -maxdepth 5 -type d -name "*baseline*" -o -name
+      "*textvqa*eval*" 2>/dev/null | sort')
+  ⎿  /home/zsm/parameter-golf/.git/worktrees/pg-eval-baseline-ocr
+     /home/zsm/parameter-golf/lmms-eval/lmms_eval/baselines
+
+● Bash(ssh smYuHangLab2 'find /data/zsm/parameter-golf/
+      /home/zsm/parameter-golf/ -maxdepth 6 -type f -name "*.json" 2>/dev/null |
+      grep -E "(eval|submission|result)" |…)
+  ⎿  /data/zsm/parameter-golf/runs/ocr16_seed1/eval/outputs__merged/2026060
+     4_175118_results.json
+     /data/zsm/parameter-golf/runs/ocr16_seed1/eval/submissions/textvqa_sub
+     … +45 lines (ctrl+o to expand)
+
+  Thinking for 14s… (ctrl+o to expand)
+  ⎿  I found the key files. Let me now inspect them to understand the structure
+     and map submissions to models. Files found: - Baseline (zero-shot):
+     /home/zsm/parameter-golf/results/textvqa/Qwen__Qwen3-VL-2B-Instruct/2026060
+     4_102734_results.json - Baseline seed1 merged:
+     /home/zsm/parameter-golf/results/textvqa/textvqa_qwen3vl_lora_seed1__merged
+     /20260604_105250_results.json - Baseline seed2 merged:
+     /home/zsm/parameter-golf/results/textvqa/textvqa_qwen3vl_lora_seed2__merged
+     /20260604_140126_results.json - Baseline seed3 merged:
+     /home/zsm/parameter-golf/results/textvqa/textvqa_qwen3vl_lora_seed3__merged
+  Thought for 14s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'python3 -c "
+      import json, sys…)
+  ⎿  === /home/zsm/parameter-golf/results/textvqa/Qwen__Qwen3-VL-2B-Instruc
+     t/20260604_102734_results.json ===
+     {
+     … +141 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'python3 -c "
+      import json, os, glob…)
+  ⎿  === /home/zsm/parameter-golf/results/textvqa/submissions/textvqa_submi
+     ssion_2026-06-04-10-48-28.json ===
+       type: <class 'list'>
+     … +21 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'python3 -c "
+      import json…)
+  ⎿  === /data/zsm/parameter-golf/runs/ocr16_seed1/eval/submissions/textvqa
+     _submission_2026-06-04-18-12-32.json ===
+       type: <class 'list'>
+     … +3 lines (ctrl+o to expand)
+
+● Thinking for 8s… (ctrl+o to expand)
+  ⎿  Good, I now have the scores: - Zero-shot baseline: 0.6977 - seed1 merged
+     baseline: 0.70858 - seed2 merged baseline: 0.71120 - seed3 merged baseline:
+     0.70824 - ocr16_seed1 merged: 0.70768 All evaluated on textvqa_val
+     (without OCR during eval). The OCR16 model scored 0.70768, which is between
+     the baseline seeds but actually slightly below seed2 and comparable to
+     seed1/seed3. It did NOT show improvement over the best baseline seed. Now I
+     need to: 1. Map submission files to their corresponding result JSONs (by
+     timestamp or content) 2. Find the TextVQA validation dataset to get gold
+     answers 3. Compute failure overlap and OCR recoverability Let me map
+     submissions to models. The timestamps in the submission filenames should…
+
+● Bash(ssh smYuHangLab2 'python3 -c "
+      import json, os, glob…)
+  ⎿  zero-shot            20260604_102734      score=0.69770
+     seed1_merged         20260604_105250      score=0.70858
+     seed2_merged         20260604_140126      score=0.71120
+     … +15 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find
+      /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/textvqa -type f |
+      sort')
+  ⎿  /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/textvqa/__pycache__
+     /utils.cpython-310.pyc
+     /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/textvqa/_default_te
+     … +12 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /data/zsm/parameter-golf/data
+      /home/zsm/parameter-golf/data -maxdepth 3 -type f \( -name "*.parquet" -o
+      -name "*.json" -o -name "*.jsonl"…)
+  ⎿  /data/zsm/parameter-golf/data/prepared_textvqa_qwen3vl_seed1/dataset_i
+     nfo.json
+     /data/zsm/parameter-golf/data/prepared_textvqa_qwen3vl_seed1/manifest.
+     … +16 lines (ctrl+o to expand)
+
+● Thinking for 5s… (ctrl+o to expand)
+  ⎿  I need to: 1. Map submissions to results more precisely (probably by
+     timestamp correspondence) 2. Read the TextVQA YAML configs to compare
+     textvqa_val vs textvqa_val_ocr 3. Get gold answers - either from
+     HuggingFace dataset or from parquet files 4. Write an analysis script Let
+     me first check if there's a huggingface cache or if I can use the dataset
+  Thought for 5s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textvqa/textvqa_val.yaml')
+  ⎿  task: textvqa_val
+     test_split: validation
+     metric_list:
+     … +9 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textvqa/textvqa_val_ocr.yaml')
+  ⎿  task: textvqa_val_ocr
+     test_split: validation
+     dataset_path: /storage/data/shiyd2023/datasets/textvqa
+     … +25 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textvqa/_default_template_textvqa_yaml')
+  ⎿  dataset_path: lmms-lab/textvqa # lmms-lab/textvqa
+     output_type: generate_until
+     doc_to_visual: !function utils.textvqa_doc_to_visual
+     … +18 lines (ctrl+o to expand)
+
+  Thinking for 10s… (ctrl+o to expand)
+  ⎿  Now I can see the critical difference: textvqa_val (default template): -
+     ocr: false - max_new_tokens: not specified in textvqa_val.yaml, so inherits
+● Bash(ssh smYuHangLab2 'cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textvqa/_default_template_textvqa_yaml')
+  ⎿  dataset_path: lmms-lab/textvqa # lmms-lab/textvqa
+     output_type: generate_until
+     doc_to_visual: !function utils.textvqa_doc_to_visual
+     … +18 lines (ctrl+o to expand)
+
+  Thought for 10s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'python3 -c "
+      import pyarrow.parquet as pq…)
+  ⎿  Error: Exit code 1
+     Traceback (most recent call last):
+       File "<string>", line 2, in <module>
+     ModuleNotFoundError: No module named 'pyarrow'
+
+● Bash(ssh smYuHangLab2 'python3 -c "
+      from datasets import load_dataset…)
+  ⎿  Error: Exit code 1
+     Traceback (most recent call last):
+       File "<string>", line 2, in <module>
+     ModuleNotFoundError: No module named 'datasets'
+
+  Thought for 2s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'ls /home/zsm/parameter-golf/venv/bin/python*')
+  ⎿  /home/zsm/parameter-golf/venv/bin/python
+     /home/zsm/parameter-golf/venv/bin/python3
+     /home/zsm/parameter-golf/venv/bin/python3.10
+
+● Bash(ssh smYuHangLab2 '/home/zsm/parameter-golf/venv/bin/python -c "import
+      datasets; print(\"datasets OK\")"')
+  ⎿  datasets OK
+
+● Bash(ssh smYuHangLab2 'find /home/zsm/parameter-golf -name "utils.py" -path
+      "*textvqa*" -exec cat {} \;')
+  ⎿  import datetime
+     import json
+     import statistics
+     … +62 lines (ctrl+o to expand)
+
+  Thought for 6s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 '/home/zsm/parameter-golf/venv/bin/python -c "
+      from datasets import load_dataset…)
+  ⎿  Running in the background (↓ to manage)
+  ⎿  (timeout 1m)
+
+  Thought for 4s, read 1 file (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 '/home/zsm/parameter-golf/venv/bin/python -c "
+      from datasets import load_dataset…)
+  ⎿  Error: Couldn't find a dataset script at /storage/data/shiyd2023/datas
+     ets/textvqa/textvqa.py or any data file in the same directory.
+     Traceback (most recent call last):
+     … +13 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /home/zsm/.cache/huggingface -name "*textvqa*"
+      -type d 2>/dev/null | head -10')
+  ⎿  (No output)
+
+● Bash(ssh smYuHangLab2 'ls -la /storage/data/shiyd2023/datasets/textvqa/')
+  ⎿  Error: Exit code 2
+     ls: cannot access '/storage/data/shiyd2023/datasets/textvqa/': No such file
+     or directory
+
+● Thinking for 3s… (ctrl+o to expand)
+  ⎿  The local path doesn't exist. Let me check what's actually in the data
+     ls: cannot access '/storage/data/shiyd2023/datasets/textvqa/': No such file
+     or directory
+
+  Thought for 3s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /data/zsm/parameter-golf/data
+      /home/zsm/parameter-golf/data -maxdepth 4 -type f 2>/dev/null | sort')
+  ⎿  /data/zsm/parameter-golf/data/prepared_textvqa_qwen3vl_seed1/data-0000
+     0-of-00020.arrow
+     /data/zsm/parameter-golf/data/prepared_textvqa_qwen3vl_seed1/data-0000
+     … +82 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /home/zsm/.cache -path "*textvqa*" -type f
+      2>/dev/null | head -20')
+  ⎿  (No output)
+
+● Bash(ssh smYuHangLab2 'python3 -c "
+      import json…)
+  ⎿  Top-level keys: ['results', 'group_subtasks', 'configs', 'versions', '
+     n-shot', 'higher_is_better', 'n-samples', 'config', 'git_hash', 'git_b
+     ranch', 'lmms_eval_version', 'date', 'throughput', 'usage', 'task_hash
+     … +35 lines (ctrl+o to expand)
+
+● Background command "Load TextVQA validation dataset" failed with exit code 1
+
+  Thinking for 4s… (ctrl+o to expand)
+  ⎿  The result JSONs don't contain per-sample predictions. I need to get gold
+     answers from somewhere. I have prepared arrow files. Let me try reading
+     those with pyarrow or even just python's struct module to understand the
+     format. Actually, I should try using the venv's python which might have
+     pyarrow installed since it's the project's venv. Let me also check the
+  ⎿  {
+       "builder_name": "parquet",
+       "citation": "",
+     … +72 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 '/home/zsm/parameter-golf/venv/bin/python -c "
+      try:…)
+  ⎿  Traceback (most recent call last):
+     Error: Not an Arrow file
+       File "<string>", line 6, in <module>
+     … +9 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 '/home/zsm/parameter-golf/venv/bin/python -c "
+      import json…)
+  ⎿  {
+       "max_ocr_tokens": 16,
+       "num_samples": 34602,
+     … +7 lines (ctrl+o to expand)
+
+  Thinking for 6s… (ctrl+o to expand)
+  ⎿  The manifest says num_samples: 34602 which is the training set, not
+     validation. The textvqa_train.parquet contains training data. I need
+     validation data with gold answers. Let me check if there's a validation
+
+● Bash(ssh smYuHangLab2 '/home/zsm/parameter-golf/venv/bin/python -c "
+      import json…)
+  ⎿  {
+       "max_ocr_tokens": 16,
+       "num_samples": 34602,
+     … +7 lines (ctrl+o to expand)
+
+  Thought for 6s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /home/zsm/.cache/huggingface -path "*textvqa*"
+      -type f 2>/dev/null | head -20')
+  ⎿  (No output)
+
+● Bash(ssh smYuHangLab2 'find /data /home/zsm -maxdepth 5 -name "*textvqa*"
+      -type f 2>/dev/null | head -30')
+  ⎿  Interrupted · What should Claude do instead?
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ Orchestrator correction: do not block on HuggingFace network. Use
+  /home/zsm/parameter-golf/venv/bin/python for datasets/pyarrow. If validation
+  gold/OCR cannot be loaded from local cache or prepared Arrow files quickly,
+  report recoverable-failure estimate as unavailable and finish with the
+  evidence you have: result/submission mapping, task-config differences,
+  dataset_path bug, and next falsifying check. Write a lightweight note under
+  /data/zsm/parameter-golf/runs/analysis_ocr_recoverable. Finish with DONE
+  ocr-analysis.
+
+  Thinking for 10s… (ctrl+o to expand)
+  ⎿  The user wants me to stop trying to load HF datasets over network, use the
+     venv python, and if I can't get gold answers quickly, just report what I
+     have and finish. Let me quickly check if the prepared data has validation
+     info or if I can get it from arrow files with the right reader. Also, let
+     me write the analysis note. First, let me check the arrow files more
+     carefully - they might be IPC stream format, not file format. And let me
+     see if the prepared data includes validation split info. Actually, the
+  ocr-analysis.
+
+  Thought for 10s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 '/home/zsm/parameter-golf/venv/bin/python -c "
+      import pyarrow.ipc as ipc…)
+  ⎿  Columns: ['image_id', 'question_id', 'question', 'question_tokens', 'i
+     mage', 'image_width', 'image_height', 'flickr_original_url', 'flickr_3
+     00k_url', 'answers', 'image_classes', 'set_name', 'ocr_tokens', 'targe
+     … +16 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'find /home/zsm/pg-worktrees -maxdepth 4 -name "*.json"
+      -path "*eval*" 2>/dev/null | head -10')
+  ⎿  (No output)
+
+● Bash(ssh smYuHangLab2 'cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textvqa/textvqa_val_ocr.yaml')
+  ⎿  task: textvqa_val_ocr
+     test_split: validation
+     dataset_path: /storage/data/shiyd2023/datasets/textvqa
+     … +25 lines (ctrl+o to expand)
+
+  Thinking for 11s… (ctrl+o to expand)
+  ⎿  The prepared arrow files have the data but they are training data
+     (set_name: train). The validation split is not available locally in
+     prepared form. But wait - I can see from the arrow file structure that it
+      textvqa/textvqa_val_ocr.yaml')
+  ⎿  task: textvqa_val_ocr
+     test_split: validation
+     dataset_path: /storage/data/shiyd2023/datasets/textvqa
+     … +25 lines (ctrl+o to expand)
+
+  Thought for 11s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 '/home/zsm/parameter-golf/venv/bin/python -c "
+      import json, glob, os…)
+  ⎿  Result files:
+       zero-shot            start=1970-01-14-22-31-18  end=1970-01-14-22-52
+     -12  score=0.69770
+     … +16 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'cat /home/zsm/parameter-golf/lmms-eval/lmms_eval/tasks/
+      textvqa/textvqa_val.yaml')
+  ⎿  task: textvqa_val
+     test_split: validation
+     metric_list:
+     … +9 lines (ctrl+o to expand)
+
+  Thought for 20s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 '/home/zsm/parameter-golf/venv/bin/python -c "
+      import json…)
+  ⎿  Error: Exit code 1
+       File "<string>", line 14
+         print(f"{label}: model_name={data.get("model_name", "N/A")}
+     sanitized={data.get("model_name_sanitized", "N/A")}")
+                                                ^^^^^^^^^^
+     SyntaxError: f-string: unmatched '('
+
+  Thought for 2s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 '/home/zsm/parameter-golf/venv/bin/python -c "
+      import json…)
+  ⎿  zero-shot: model_name=Qwen/Qwen3-VL-2B-Instruct  sanitized=Qwen__Qwen3
+     -VL-2B-Instruct
+     seed1: model_name=./outputs/textvqa_qwen3vl_lora_seed1/merged  sanitiz
+     … +5 lines (ctrl+o to expand)
+
+  Thought for 6s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 '/home/zsm/parameter-golf/venv/bin/python -c "
+      import json…)
+  ⎿  results: dict  keys=['textvqa_val']
+     group_subtasks: dict  keys=['textvqa_val']
+     configs: dict  keys=['textvqa_val']
+     … +23 lines (ctrl+o to expand)
+
+● Thinking for 5s… (ctrl+o to expand)
+  ⎿  The result JSONs don't contain per-sample data. The usage dict is empty. So
+     I can't compute failure overlap without gold answers. Now let me write the
+     comprehensive analysis note. I should also check if there are any other
+     relevant details I might have missed - like the all_results.json in the
+     ocr16 run, or the training config. Let me quickly check: 1. The ocr16 run's
+     all_results.json 2. The ocr16 run's config.yaml 3. Whether the training
+     config shows OCR was used during training Then I'll write the final note.
+
+● Bash(ssh smYuHangLab2 'python3 -c "
+      import json, yaml…)
+  ⎿  {
+       "completed_steps": 1024,
+       "epoch": 0.23674932084850586,
+     … +6 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'python3 -c "
+      import yaml…)
+  ⎿  model_path: Qwen/Qwen3-VL-2B-Instruct
+     data_path: /data/zsm/parameter-golf/data/textvqa_train.parquet
+     prepared_data_dir: ./data/prepared_textvqa_qwen3vl_ocr16_seed{seed}
+     … +23 lines (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'python3 -c "
+      import json…)
+  ⎿  data_path: /data/zsm/parameter-golf/data/textvqa_train.parquet
+     dataloader_num_workers: 2
+     max_ocr_tokens: 16
+     … +16 lines (ctrl+o to expand)
+
+  Thought for 7s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'python3 -c "
+      import json…)
+  ⎿  Error: Exit code 1
+       File "<string>", line 7
+         print(f"seed{seed}: use_ocr_tokens={data.get("use_ocr_tokens", "N/A")},
+     max_ocr_tokens={data.get("max_ocr_tokens", "N/A")}")
+                                                       ^^^^^^^^^^^^^^
+     SyntaxError: f-string: unmatched '('
+
+  Thought for 1s (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ Finalize now. Do not run broad find or network commands. Write the
+  lightweight analysis note under
+  /data/zsm/parameter-golf/runs/analysis_ocr_recoverable with the evidence
+  already found, then print DONE ocr-analysis.
+
+  Thought for 6s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'mkdir -p
+      /data/zsm/parameter-golf/runs/analysis_ocr_recoverable')
+  ⎿  (No output)
+
+  Thought for 9s, read 1 file (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'mkdir -p
+      /data/zsm/parameter-golf/runs/analysis_ocr_recoverable && cat >
+      /data/zsm/parameter-golf/runs/analysis_ocr_recoverable/ocr_analysis_n…)
+  ⎿  (No output)
+
+  Thought for 2s (ctrl+o to expand)
+
+● Bash(ssh smYuHangLab2 'ls -la
+      /data/zsm/parameter-golf/runs/analysis_ocr_recoverable/')
+  ⎿  total 16
+     drwxrwxr-x 2 zsm zsm 4096 Jun  4 19:35 .
+     drwxrwxr-x 8 zsm zsm 4096 Jun  4 19:32 ..
+     -rw-rw-r-- 1 zsm zsm 8120 Jun  4 19:35 ocr_analysis_note_2026-06-04.md
+
+  Thought for 2s (ctrl+o to expand)
+
+● DONE ocr-analysis
+  Remote worktree: /home/zsm/pg-worktrees/pg-ocr-analysis
+  Branch/commit: exp/ocr-analysis / 101959c
+  Files inspected: 14 files — 5 result JSONs, 5 submission JSONs, ocr16
+  config.yaml + training_config.json + all_results.json, textvqa_val.yaml,
+  textvqa_val_ocr.yaml, _default_template_textvqa_yaml, utils.py, seed1
+  manifest.json + dataset_info.json
+  Analysis outputs: /data/zsm/parameter-golf/runs/analysis_ocr_recoverable/ocr_a
+  nalysis_note_2026-06-04.md
+  Recoverable-failure estimate: UNAVAILABLE (validation gold answers / OCR
+  tokens not cached locally; HF hub unreachable)
+  Answer-style observations: OCR tokens injected after question and before
+  post_prompt via "\nReference OCR token: {tokens}" ; per-sample predictions
+  exist only as submission answers, no per-sample accuracy stored in result
+  JSONs
+  Task-config differences: textvqa_val_ocr has ocr:true, ocr_max_tokens:16,
+  max_new_tokens:16, and a critical dataset_path bug pointing to
+  /storage/data/shiyd2023/datasets/textvqa (non-existent); textvqa_val has
+  ocr:false and inherits dataset_path lmms-lab/textvqa from default template
+  Recommended next check: Fix dataset_path in textvqa_val_ocr.yaml to
+  lmms-lab/textvqa, then run eval-only comparison of ocr16_seed1 merged vs
+  baseline seed2 merged (best baseline) on textvqa_val_ocr — lowest-cost
+  falsifier for train/eval prompt mismatch hypothesis
+  Problems/risks: (1) dataset_path bug blocks textvqa_val_ocr eval, (2) no
+  per-sample data in result JSONs, (3) baseline seed2 (0.71120) is best baseline
+  — compare against it, not seed1, (4) OCR16 may have overfit to OCR tokens,
+  (5) HF cache absent on server, any fresh eval needs network or pre-populated
+  cache
+
+✻ Churned for 3m 5s
+
+────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────
+  [kimi-for-coding] ██░░░░░░░░ 23%
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+
