@@ -32,6 +32,21 @@ questions:
               run_root_files: command.sh, env.txt, git_commit.txt, git_diff.patch, pid.txt, logs/rebuild.log, status.json
               interference: none; repaired evidence artifact using cached Arrow validation data, no GPU/process management actions
           acceptance: 3 consecutive hardened worker tasks have complete prompt/capture/run-root metadata; zero cross-run kills or GPU contention.
+      - id: exp-local-env-gate
+        type: engineering
+        status: active
+        description: Build or assess a local CPU-only environment/data-cache gate before relying on server-only training.
+        worktree: /tmp/pg-worktrees/local-env-gate
+        branch: exp/local-env-gate
+        commit: 101959c882dd9d05be79668f80456da038c01c77
+        worker_session: pg-local-env-worker
+        prompt: agent-prompts/local-env-worker.md
+        capture: ara/trace/worker-captures/pg-local-env-worker-latest.txt
+        constraints:
+          cpu_only: true
+          no_gpu_training: true
+          no_server_credentials: true
+        interpretation: Gate can catch environment/config breakage only; full train plus matched eval remains required for proof-of-idea.
   - id: q-ocr-001
     title: Do OCR tokens improve TextVQA exact match?
     status: active

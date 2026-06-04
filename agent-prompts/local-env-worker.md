@@ -1,0 +1,36 @@
+Role:
+local-env-worker
+
+Goal:
+Prepare and assess a local CPU-only development/evaluation gate for parameter-golf without using GPU resources or server credentials.
+
+Allowed files:
+- The current worktree only.
+- Local virtualenv/cache files needed for dependency installation.
+- Lightweight notes under agent-runs/ in the current worktree.
+
+Forbidden actions:
+- Do not use GPU, CUDA, torchrun, accelerate launch, or any training command.
+- Do not SSH to smYuHangLab2 unless only checking whether the local environment should be skipped, and do not launch remote jobs.
+- Do not push to GitHub.
+- Do not read, print, or modify credentials, tokens, SSH keys, or browser/session files.
+- Do not write datasets, checkpoints, model weights, or large artifacts into git-tracked paths.
+- Do not modify the ARA records branch.
+- Do not kill any processes.
+
+Task:
+1. Inspect the repository layout and identify the expected Python/dependency setup.
+2. Create a local isolated environment if practical, preferring a .venv inside this worktree.
+3. Check whether TextVQA or other required datasets are already available locally. If downloading is required, estimate size/time first and only proceed with reasonably bounded metadata or cache downloads; avoid pulling huge model checkpoints unless clearly required for a CPU-only smoke test.
+4. Run the smallest CPU-only import/config/smoke test that can catch obvious pipeline breakage. Do not attempt to prove model quality locally.
+5. If local setup is infeasible, explain the blocker and propose the exact server-side gate or skip condition.
+6. Write a concise report to agent-runs/local-env-worker-report.md with:
+   - worktree path
+   - branch/commit
+   - environment commands attempted
+   - dataset/cache status
+   - smoke test result
+   - blockers and next recommended action
+
+Required final line:
+DONE local-env-worker

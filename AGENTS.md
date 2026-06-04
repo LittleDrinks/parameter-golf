@@ -26,6 +26,7 @@ Codex is the orchestrator by default.
 - Inspect evidence and summarize results.
 - Delegate code-writing, experiment launch, and monitoring to `panel-as-worker` unless the user explicitly asks Codex to edit directly.
 - Keep implementation work on separate code branches/worktrees. Every experiment must use its own git worktree to avoid source, config, and artifact contamination.
+- Protect the main Codex session budget. Prefer Claude/Kimi workers for exploratory coding, long environment setup, review passes, and monitoring loops.
 
 
 ## Worktree Requirement
@@ -45,6 +46,32 @@ Rules:
 - Store heavy artifacts under `/data/zsm/parameter-golf/runs/<run_id>`, not inside the git tree.
 - Record the worktree path, branch, commit, config, seed, and run root in ARA before interpreting results.
 - If a worker needs to edit code, launch it with `panel-as-worker` using that experiment worktree as `--workdir`.
+- A full proof-of-idea experiment requires: independent worktree, full training, matched eval, config, commit, run root, and numeric result recorded in ARA.
+- CPU-only gates are smoke tests only. They may catch broken code/config, but they do not prove training ideas.
+
+## Overnight Optimization Loop
+
+When the user approves an overnight loop with a hard stop, do not voluntarily stop before the stated time unless the user interrupts, safety/resource constraints require pausing, or all workers are blocked and the block is recorded.
+
+Current loop target:
+
+```text
+Hard stop: 2026-06-05 08:00 Asia/Shanghai
+Goal: continuously seek TextVQA exact_match improvement through full train + matched eval experiments.
+```
+
+Loop rules:
+
+- Keep looking for directions until the hard stop. If one idea fails, archive it and start the next plausible direction.
+- Default to one GPU job. Use at most two GPU jobs at once.
+- Poll `nvidia-smi`; launch only on GPUs with `memory.used < 1000 MiB`.
+- `smYuHangLab2` is a shared public server. Do not kill unrelated processes. Workers may only stop their own run-root PID recorded in `pid.txt`.
+- Run one experiment idea or run family per worktree and branch.
+- Commit atomically after meaningful code/config/record changes.
+- Archive worker panes and logs promptly under `ara/trace/worker-captures/`, then close stale rmux windows.
+- At the hard stop, produce a report with branches, commits, configs, run roots, metrics, open blockers, and next recommended experiments.
+
+Candidate directions should not all concentrate on OCR. Maintain a queue that includes non-OCR alternatives such as answer-style/prompt-template changes, OCR dropout or robustness, LoRA hyperparameter sweeps, and other code-review-derived fixes.
 
 ## Project Skills
 
@@ -89,6 +116,16 @@ agent-prompts/
 
 Workers must have a clear role, allowed files, forbidden actions, checks, and final `DONE <role>` sentinel.
 
+## Review Workflow
+
+Review is a required step before trusting new training/eval code.
+
+- Use local Codex or Claude review flows for uncommitted worktree diffs, branch diffs, or recent-turn diffs. In Codex, `/review` supports local review against uncommitted changes or a base branch and can take custom review instructions.
+- GitHub Codex code review is PR-based. It requires Codex Cloud/code-review to be enabled for the repository and is triggered with `@codex review` on a pull request.
+- A bare local or server worktree cannot receive GitHub code review directly. To use the GitHub review path, push a branch from the credentialed local environment, open a PR, then trigger `@codex review`.
+- Codex GitHub review should focus on serious P0/P1 issues. For broader research correctness, spawn dedicated reviewer workers and record their findings.
+- Record review status in ARA before interpreting results from code that changed the harness, data path, training loop, merge logic, or eval config.
+
 ### rigor-reviewer
 
 Use when auditing ARA quality: evidence relevance, falsifiability, scope calibration, argument coherence, exploration integrity, and methodology. This is for review, not day-to-day logging.
@@ -129,6 +166,12 @@ Known server layout:
 ```
 
 Default behavior is read-only inspection. Launch runs or edit server code only when the user explicitly asks, preferably by delegating to `panel-as-worker`.
+
+Server credential policy:
+
+- Do not configure GitHub credentials on `smYuHangLab2`.
+- Server-side push failure is expected and acceptable.
+- Commit experiment work on the server branch, then push from the local/VS Code credential environment or ask the user to push.
 
 ## Server Records
 
