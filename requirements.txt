@@ -1,8 +1,10 @@
 # Core dependencies for TextVQA Qwen3-VL LoRA baseline
 # Python 3.13.5, CUDA 12.4
 
-torch==2.6.0+cu124
-transformers==4.57.0
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.5.1+cu118
+torchvision==0.20.1+cu118
+transformers==4.57.1
 accelerate==1.7.0
 peft==0.15.2
 datasets==3.6.0
