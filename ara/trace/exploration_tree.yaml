@@ -232,6 +232,13 @@ questions:
         description: Complete aligned OCR eval for baseline seed1/seed3 or a cheaper subset check to estimate whether the OCR16 advantage is robust to baseline seed variance.
         falsifying_check: If another baseline seed with OCR-at-eval reaches within 0.001 of OCR16 aligned eval, treat OCR16 seed1 as inconclusive and require repeat seed before new OCR variants.
         cost: medium; eval-only GPU
+        latest_result:
+          seed1_textvqa_val_ocr: 0.7134200000000036
+          seed2_textvqa_val_ocr: 0.7133600000000039
+          ocr16_seed1_textvqa_val_ocr: 0.7262000000000036
+          current_delta_vs_best_baseline_ocr: 0.012780000000000035
+          remaining_gap: seed3 aligned OCR eval still missing
+          interpretation: baseline seed1 and seed2 aligned OCR evals are nearly identical, so the OCR16 advantage remains after one additional baseline seed check.
       - id: exp-seed-robustness-preflight
         type: analysis
         status: completed
@@ -246,3 +253,18 @@ questions:
           missing: seed1 and seed3 aligned textvqa_val_ocr result JSONs
           available_gpu_at_preflight: GPU2
           launch_policy: serial only; seed1 then seed3; start only if GPU2 memory.used < 1000 MiB and no zsm eval/training process is active.
+      - id: exp-baseline-seed1-eval-ocr
+        type: analysis
+        status: completed
+        description: Serial GPU eval of baseline seed1 merged model on aligned `textvqa_val_ocr`.
+        worktree: /home/zsm/pg-worktrees/pg-seed-robustness-ocr
+        branch: exp/seed-robustness-ocr
+        commit: d659cbdf335a66f43e835dd2c3899ff76edeb5d6
+        remote_run_root: /data/zsm/parameter-golf/runs/eval_baseline_seed1_textvqa_val_ocr
+        result:
+          metric: textvqa_val_ocr exact_match
+          value: 0.7134200000000036
+          stderr: 0.006032748920011863
+          result_path: /data/zsm/parameter-golf/runs/eval_baseline_seed1_textvqa_val_ocr/eval/textvqa_qwen3vl_lora_seed1__merged/20260604_221119_results.json
+          interpretation: Baseline seed1 aligned OCR eval matches seed2 aligned OCR eval within 0.00006; OCR16 remains +0.01278 over the best aligned baseline observed so far.
+        note: Dedicated worktree branch committed the dataset_path patch. Server-side push failed due missing GitHub credentials, which is expected for the public shared server per user instruction; commit is sufficient for server record and manual push can be done from VS Code credential environment.

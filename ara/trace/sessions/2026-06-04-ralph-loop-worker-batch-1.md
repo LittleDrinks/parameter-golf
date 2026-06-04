@@ -163,3 +163,52 @@ Findings:
    - either baseline seed1 `textvqa_val_ocr` for robustness,
    - or OCR16 `max_new_tokens=32` for answer-style calibration.
 4. Organize/push remote code worktree branches after deciding whether the next action is eval config-only or code/config change.
+
+## Server credential policy
+
+User clarified that `smYuHangLab2` is a public/shared server and should not have GitHub credentials. Remote experiment worktrees should still be committed locally on the server branch, but a failed `git push` from the server is expected and should not be treated as an infrastructure bug. Push can be done manually by the user from the VS Code credential environment, or Codex should report the branch/commit for manual publication.
+
+## Seed1 OCR eval follow-up
+
+After the CPU-only worker batch, one serial GPU eval was launched because GPU2 was free and no `zsm` train/eval process was active.
+
+Run:
+
+```text
+run_id: eval_baseline_seed1_textvqa_val_ocr
+worktree: /home/zsm/pg-worktrees/pg-seed-robustness-ocr
+branch: exp/seed-robustness-ocr
+commit: d659cbdf335a66f43e835dd2c3899ff76edeb5d6
+base_commit: 101959c882dd9d05be79668f80456da038c01c77
+task: textvqa_val_ocr
+model: /data/zsm/parameter-golf/outputs/textvqa_qwen3vl_lora_seed1/merged
+run_root: /data/zsm/parameter-golf/runs/eval_baseline_seed1_textvqa_val_ocr
+result_json: /data/zsm/parameter-golf/runs/eval_baseline_seed1_textvqa_val_ocr/eval/textvqa_qwen3vl_lora_seed1__merged/20260604_221119_results.json
+exact_match: 0.7134200000000036
+stderr: 0.006032748920011863
+```
+
+Safety:
+
+- One GPU job only.
+- No training.
+- No seed3 launch.
+- No unrelated process kill.
+- GPU2 used approximately 4.6 GiB for PID `2771710`.
+
+Interpretation:
+
+Baseline seed1 and seed2 aligned OCR evals are effectively tied:
+
+```text
+seed1 textvqa_val_ocr = 0.7134200000000036
+seed2 textvqa_val_ocr = 0.7133600000000039
+```
+
+OCR16 remains ahead of the best observed aligned baseline by:
+
+```text
+0.7262000000000036 - 0.7134200000000036 = 0.012780000000000035
+```
+
+Remaining seed robustness gap: baseline seed3 aligned OCR eval is still missing.
