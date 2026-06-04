@@ -73,6 +73,14 @@ Actions:
     - `/data/zsm/parameter-golf/runs/lora_lr2e5_seed1/eval_harness_commit.txt`
     - `/data/zsm/parameter-golf/runs/lora_lr2e5_seed1/eval_harness_diff.patch`
 - Checked GPUs at 02:25: no GPU had `memory.used < 1000 MiB`; matched eval rerun deferred.
+- Reviewed the LoRA training config patch:
+  - commit: `910bba64a914f6e9389e6dd9ed585c689de79e8c`
+  - scope: config-only file `configs/experiments/lora_lr2e5.yaml`
+  - intended change: `learning_rate: 0.00002`
+  - path changes: prepared data and outputs moved under `/data/zsm/parameter-golf/runs/lora_lr2e5_seed1`
+  - unchanged controls: `use_ocr_tokens: false`, `max_train_samples: 40960`, `max_steps: 1024`, LoRA rank/alpha/dropout/target modules, pixel bounds, sequence length
+  - review finding: no P0/P1 issue in the config patch; metric still requires repaired matched eval before interpretation.
+  - train evidence: `train_runtime=3053.8071`, `completed_steps=1024`, `train_loss=0.467629817314446`.
 
 Interpretation:
 

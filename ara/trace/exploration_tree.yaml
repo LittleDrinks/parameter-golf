@@ -226,10 +226,13 @@ questions:
           first_eval_attempt: failed_no_metric
           first_eval_failure: textvqa_val_ocr task still pointed at /storage/data/shiyd2023/datasets/textvqa, causing FileNotFoundError before model evaluation.
           repair: Patched textvqa_val_ocr dataset_path to lmms-lab/textvqa in the isolated LoRA worktree, matching prior aligned OCR eval worktrees.
+          train_runtime_seconds: 3053.8071
+          completed_steps: 1024
+          train_loss: 0.467629817314446
           latest_verified_at: 2026-06-05 02:25 Asia/Shanghai
         review_status:
           eval_harness_patch: local orchestrator review completed; one-line dataset_path change only, same repair as prior aligned OCR eval branches; no metric interpreted until rerun succeeds.
-          training_config_patch: pending broader review before treating any positive metric as trusted.
+          training_config_patch: local orchestrator review completed; config-only copy from baseline with run-root paths and learning_rate changed to 0.00002; no prompt, OCR, target-module, sample-count, or eval-generation changes.
         falsifying_check: Reject lr2e-5 if matched textvqa_val_ocr exact_match does not exceed the best aligned OCR baseline by at least +0.003, or if it fails to approach OCR16 seed1 textvqa_val_ocr = 0.7262000000000036.
   - id: q-portfolio-001
     title: What non-OCR directions should be explored in parallel?
