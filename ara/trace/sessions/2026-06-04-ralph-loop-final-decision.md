@@ -109,6 +109,16 @@ remote worktree: /home/zsm/pg-worktrees/pg-seed-robustness-ocr
 GitHub push: completed from local credential environment
 ```
 
+Existing server experiment branches also pushed from the local credential environment:
+
+```text
+origin/exp/eval-baseline-ocr
+origin/exp/eval-ocr16-ocr
+origin/exp/harness
+origin/exp/ocr-analysis
+origin/exp/seed-robustness-ocr
+```
+
 Public server credential policy:
 
 ```text
