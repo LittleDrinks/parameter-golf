@@ -34,19 +34,32 @@ questions:
           acceptance: 3 consecutive hardened worker tasks have complete prompt/capture/run-root metadata; zero cross-run kills or GPU contention.
       - id: exp-local-env-gate
         type: engineering
-        status: active
+        status: completed
         description: Build or assess a local CPU-only environment/data-cache gate before relying on server-only training.
         worktree: /tmp/pg-worktrees/local-env-gate
         branch: exp/local-env-gate
         commit: 101959c882dd9d05be79668f80456da038c01c77
         worker_session: pg-local-env-worker
         prompt: agent-prompts/local-env-worker.md
-        capture: ara/trace/worker-captures/pg-local-env-worker-latest.txt
+        capture: ara/trace/worker-captures/pg-local-env-worker-final.txt
+        report: ara/trace/worker-captures/pg-local-env-worker-report.md
         constraints:
           cpu_only: true
           no_gpu_training: true
           no_server_credentials: true
-        interpretation: Gate can catch environment/config breakage only; full train plus matched eval remains required for proof-of-idea.
+        result:
+          smoke_passed:
+            - CPU torch import
+            - lmms_eval import
+            - EvalAIAnswerProcessor import/normalization
+            - config YAML parse
+            - AutoProcessor tokenizer metadata load
+          blocked:
+            - local /data/zsm/parameter-golf data symlink targets are unavailable
+            - Qwen3-VL full weights are not cached locally
+            - train/eval entrypoints assume CUDA/FP16
+          stopped_action: full model load was interrupted after it began downloading large Qwen weights; local gate remains bounded to static/import checks.
+        interpretation: Local CPU gate can catch environment/config/import breakage only; full train plus matched eval must run on smYuHangLab2 or another GPU/data host.
   - id: q-ocr-001
     title: Do OCR tokens improve TextVQA exact match?
     status: active
@@ -174,6 +187,38 @@ questions:
         description: Sweep conservative LoRA hyperparameters on the reliable eval surface; do not wait for OCR to be fully exhausted.
         falsifying_check: Start with the smallest 2-3 run sweep that changes one training-policy variable at a time; reject a setting if it fails to exceed the matched baseline by +0.003 exact_match or if improvement is not stable under the same eval task.
         candidate_axes: rank, learning rate, dropout, target modules, schedule, train steps
+      - id: exp-lora-lr2e5-seed1
+        type: experiment
+        status: active
+        description: Non-OCR LoRA learning-rate proof-of-idea; train with baseline prompt/data but learning_rate 2e-5, then evaluate on the matched textvqa_val_ocr surface.
+        worktree: /home/zsm/pg-worktrees/lora_lr2e5_seed1
+        branch: exp/lora-lr2e5-seed1
+        commit: 910bba64a914f6e9389e6dd9ed585c689de79e8c
+        config: /data/zsm/parameter-golf/runs/lora_lr2e5_seed1/config.yaml
+        config_source: /home/zsm/pg-worktrees/lora_lr2e5_seed1/configs/experiments/lora_lr2e5.yaml
+        remote_run_root: /data/zsm/parameter-golf/runs/lora_lr2e5_seed1
+        seed: 1
+        gpu: RTX A6000 GPU2
+        started_at: 2026-06-05 00:14 Asia/Shanghai
+        matched_eval_task: textvqa_val_ocr
+        run_root_files:
+          - command.sh
+          - env.txt
+          - git_commit.txt
+          - git_diff.patch
+          - pid.txt
+          - launcher_pid.txt
+          - logs/prepare.stdout.log
+          - logs/prepare.stderr.log
+          - logs/train.stdout.log
+          - logs/train.stderr.log
+          - status.json
+          - config.yaml
+        result:
+          status: running
+          current_stage: train
+          latest_progress: 113/1024 steps at 2026-06-05 00:20 Asia/Shanghai
+        falsifying_check: Reject lr2e-5 if matched textvqa_val_ocr exact_match does not exceed the best aligned OCR baseline by at least +0.003, or if it fails to approach OCR16 seed1 textvqa_val_ocr = 0.7262000000000036.
   - id: q-portfolio-001
     title: What non-OCR directions should be explored in parallel?
     status: active
