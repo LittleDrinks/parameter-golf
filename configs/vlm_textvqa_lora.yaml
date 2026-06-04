@@ -1,5 +1,5 @@
-model_path: /storage/data/shiyd2023/LLM_model/Qwen3-VL-2B-Instruct
-data_path: /storage/data/shiyd2023/datasets/textvqa/default/train/*.parquet
+model_path: Qwen/Qwen3-VL-2B-Instruct
+data_path: /data/zsm/parameter-golf/data/textvqa_train.parquet
 prepared_data_dir: ./data/prepared_textvqa_qwen3vl_seed{seed}
 output_dir: ./outputs/textvqa_qwen3vl_lora_seed{seed}
 

@@ -1,8 +1,11 @@
 #!/bin/bash
+export HF_HOME=/data/zsm/hf_cache
+export HF_DATASETS_CACHE=/data/zsm/hf_cache/datasets
+export HF_ENDPOINT=https://hf-mirror.com
 set -euo pipefail
 
 export SEED=${SEED:-1}
-export MODEL_PATH=${MODEL_PATH:-/storage/data/shiyd2023/LLM_model/Qwen3-VL-2B-Instruct}
+export MODEL_PATH=${MODEL_PATH:-Qwen/Qwen3-VL-2B-Instruct}
 export MAX_PIXELS=${MAX_PIXELS:-200704}
 export MIN_PIXELS=${MIN_PIXELS:-100352}
 export USE_CACHE=${USE_CACHE:-false}
