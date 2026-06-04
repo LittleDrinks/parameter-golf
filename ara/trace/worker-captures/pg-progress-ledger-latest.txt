@@ -1,0 +1,248 @@
+ ▐▛███▜▌   Claude Code v2.1.162
+▝▜█████▛▘  kimi-for-coding · API Usage Billing
+  ▘▘ ▝▝    ~/wsl-workspace/parameter-golf
+
+❯ Role:
+  progress-ledger
+
+  Goal:
+  Produce a concise, read-only progress ledger for the current parameter-golf
+  ARA records.
+
+  Allowed files:
+  - ara/README.md
+  - ara/evidence/results.csv
+  - ara/logic/*.md
+  - ara/trace/exploration_tree.yaml
+  - ara/trace/sessions/*.md
+  - ara/trace/worker-captures/*.txt
+
+  Forbidden actions:
+  - Do not edit files.
+  - Do not access the GPU server.
+  - Do not launch, kill, or inspect remote train/eval processes.
+  - Do not run web searches.
+  - Do not create or modify git worktrees.
+  - Do not create or modify git worktrees.
+
+  Task:
+  Read the allowed local ARA records and produce a short report with:
+  1. Current confirmed numeric results, grouped by baseline/OCR/eval-only.
+  2. Active hypotheses and their status.
+  3. Evidence gaps or reliability concerns.
+  4. Recommended next smallest falsifying checks, explicitly separating OCR
+  from non-OCR ideas.
+
+  Keep the report concrete. Include exact run IDs, metrics, result paths, and
+  unresolved caveats where present.
+
+  Required final line:
+  DONE progress-ledger
+
+
+  Thought for 12s, read 4 files (ctrl+o to expand)
+
+● parameter-golf ARA 进度报告
+
+  1. 当前确认的数值结果
+
+  Baseline（无 OCR 训练，无 OCR 评估）
+
+  ┌──────────┬─────┬─────┬──────┬──────┬─────┬───────────────────────────────┐
+  │          │ see │ com │ eval │ exac │ std │                               │
+  │  run_id  │  d  │ mit │ _tas │ t_ma │ err │          result_path          │
+  │          │     │     │  k   │ tch  │     │                               │
+  ├──────────┼─────┼─────┼──────┼──────┼─────┼───────────────────────────────┤
+  │ server_b │     │ a20 │ text │ 0.70 │ ~0. │ /home/zsm/parameter-golf/resu │
+  │ aseline_ │ 1   │ 938 │ vqa_ │ 858  │ 006 │ lts/textvqa/.../20260604_1052 │
+  │ seed1    │     │ 5   │ val  │      │ 1   │ 50_results.json               │
+  ├──────────┼─────┼─────┼──────┼──────┼─────┼───────────────────────────────┤
+  │ server_b │     │ a20 │ text │ 0.71 │ ~0. │ /home/zsm/parameter-golf/resu │
+  │ aseline_ │ 2   │ 938 │ vqa_ │ 120  │ 006 │ lts/textvqa/.../20260604_1401 │
+  │ seed2    │     │ 5   │ val  │      │ 1   │ 26_results.json               │
+  ├──────────┼─────┼─────┼──────┼──────┼─────┼───────────────────────────────┤
+  │ server_b │     │ a20 │ text │ 0.70 │ ~0. │ /home/zsm/parameter-golf/resu │
+  │ aseline_ │ 3   │ 938 │ vqa_ │ 824  │ 006 │ lts/textvqa/.../20260604_1512 │
+  │ seed3    │     │ 5   │ val  │      │ 1   │ 35_results.json               │
+  └──────────┴─────┴─────┴──────┴──────┴─────┴───────────────────────────────┘
+
+  - 基线均值（seed1-3）：0.70934，样本标准差 0.00162
+  - 最佳基线：seed2 @ 0.71120
+
+  OCR 训练（OCR16）
+
+  ┌─────┬─────┬─────┬─────┬─────┬─────┬──────┬──────────────────────────────┐
+  │     │     │     │ eva │ exa │     │ trai │                              │
+  │ run │ see │ com │ l_t │ ct_ │ std │ n_ru │         result_path          │
+  │ _id │  d  │ mit │ ask │ mat │ err │ ntim │                              │
+  │     │     │     │     │ ch  │     │  e   │                              │
+  ├─────┼─────┼─────┼─────┼─────┼─────┼──────┼──────────────────────────────┤
+  │ ocr │     │ 101 │ tex │ 0.7 │ 0.0 │      │ /data/zsm/parameter-golf/run │
+  │ 16_ │ 1   │ 959 │ tvq │ 076 │ 060 │ 3011 │ s/ocr16_seed1/eval/.../20260 │
+  │ see │     │ c   │ a_v │ 8   │ 9   │ .4s  │ 604_175118_results.json      │
+  │ d1  │     │     │ al  │     │     │      │                              │
+  └─────┴─────┴─────┴─────┴─────┴─────┴──────┴──────────────────────────────┘
+
+  - OCR16 在 textvqa_val（无 OCR 评估）上低于最佳基线 seed2
+  0.00352，低于基线均值 0.00166。
+  - 诊断：train/eval prompt 不匹配——训练时包含 OCR tokens，评估时 textvqa_val 的
+  ocr: false 移除了 OCR 输入。
+
+  对齐评估（eval-only，均使用 textvqa_val_ocr）
+
+  run_id: eval_ocr16_seed1_textvqa_val_ocr
+  模型来源: ocr16_seed1 merged
+  commit: 101959c
+  exact_match: 0.72620
+  stderr: 0.00594
+  result_path: /data/zsm/parameter-golf/runs/eval_ocr16_seed1_textvqa_val_ocr/ev
+  al/.../20260604_193246_results.json
+  ────────────────────────────────────────
+  run_id: eval_baseline_seed2_textvqa_val_ocr
+  模型来源: baseline_seed2 merged
+  commit: 101959c
+  exact_match: 0.71336
+  stderr: 0.00603
+  result_path: /data/zsm/parameter-golf/runs/eval_baseline_seed2_textvqa_val_ocr
+  /eval/.../20260604_195729_results.json
+
+  - OCR16 对齐评估超过最佳基线 seed2 对齐评估 +0.01284
+  exact_match，超过预设最小正差值 +0.001。
+  - 两个评估均在同一 commit 家族（101959c）的隔离 worktree 中运行，仅 patch 了
+  dataset_path: lmms-lab/textvqa。
+
+  ---
+  2. 活跃假设及状态
+
+  假设: H1: OCR tokens 在正确对齐的评估下能改善 TextVQA exact match
+  状态: ✅ Stage 2 已通过
+  关键证据: 对齐评估显示 OCR16 (0.7262) > baseline seed2 (0.7134)，delta
+    +0.0128。Stage 3 样本证据：5000 样本中 OCR16 胜 229，基线胜 149，平局 4622。
+  ────────────────────────────────────────
+  假设: H2: ocr16_seed1 原始无改善是因为 train/eval prompt 不匹配
+  状态: ✅ 主导解释已确认
+  关键证据: 原始评估 textvqa_val（ocr: false）与训练 OCR
+    条件矛盾；对齐后结果反转。
+  ────────────────────────────────────────
+  假设: H3: 前 16 个 OCR tokens 可能包含噪声/不相关 token，问题相关选择可能更好
+  状态: 🟡 待检验
+  关键证据: 尚无样本级可恢复失败分析（验证 gold/OCR tokens 未本地缓存）。
+  ────────────────────────────────────────
+  假设: H4: 答案风格（post-prompt、max_new_tokens）对 exact match 有显著影响
+  状态: 🟡 待检验
+  关键证据: 训练 prompt 使用完整句子，评估 textvqa_val 使用 "
+    Answer:"，textvqa_val_ocr 使用不同配置。尚无控制实验。
+  ────────────────────────────────────────
+  假设: H5: 1024 steps 可能不足以让 OCR 条件行为稳定出现
+  状态: 🟡 可能成立但非当前瓶颈
+  关键证据: loss 噪声大但整体下降；主要问题已确定为 eval 对齐而非优化失败。
+
+  ---
+  3. 证据空白与可靠性问题
+
+  证据空白
+
+  1. 可恢复失败估计缺失：exp-ocr-recoverable-errors 尝试比较基线预测、OCR tokens
+  和 gold answers，但验证集 gold/OCR tokens 未在本地缓存，结果 JSON
+  仅含聚合指标和 submission，无法离线计算。远程 note 路径：/data/zsm/parameter-g
+  olf/runs/analysis_ocr_recoverable/ocr_analysis_note_2026-06-04.md。
+  2. 答案风格控制实验缺失：尚无在现有合并模型上仅改变 post-prompt /
+  max_new_tokens 的评估结果，无法隔离"OCR 训练"与"prompt 风格"的贡献。
+  3. 基线 seed1/seed3 的对齐 OCR 评估缺失：仅 baseline seed2 完成了
+  textvqa_val_ocr 评估；seed1 和 seed3 尚无对齐数据，无法估计 OCR 增益的 seed
+  间方差。
+  4. 训练指标未持久化：server_baseline_seed1 和 eval-only 运行的 train runtime
+  未保存；ocr16_seed1 的 loss 曲线仅存在于 worker 描述中，无结构化指标文件。
+  5. Stage 3 样本证据虽修复但范围有限：仅比较了 OCR16 vs baseline seed2；未覆盖
+  seed1/seed3，也未按问题类型或 OCR token 相关性分层。
+
+  可靠性问题
+
+  1. Stage 0 已通过，但早期有过程干扰：baseline 评估 worker 曾尝试清除 GPU2
+  上不属于自身的进程，导致 OCR16 评估被中断并重启。当前规则已硬化：worker
+  只能杀死自己 run root pid.txt 中的 PID。
+  2. worktree 中 textvqa_val_ocr.yaml 的 hardcoded dataset_path：原始路径
+  /storage/data/shiyd2023/datasets/textvqa 在服务器上不存在，每次 OCR
+  评估需要在隔离 worktree 中 patch。这是可重复性的一个隐患。
+  3. worker scrollback 非持久：早期 worker 未使用 --wait，无 guaranteed
+  latest/final capture；现已改进为 --wait 模式 + run root 元数据。
+
+  ---
+  4. 推荐的下一步最小可证伪检查
+
+  OCR 方向（继续 OCR 训练变体前必须先完成的检查）
+
+  检查: C1: 答案风格对齐评估（eval-only）
+  类型: 非训练
+  falsifying 条件: 在现有 OCR16 和 baseline seed2 合并模型上，仅改变 post-prompt
+
+    / max_new_tokens；若任何 prompt-only 基线达到 OCR16 对齐评估的 0.001
+  以内，则
+     OCR 训练假设被严重削弱。
+  最小可接受增益: OCR16 优势需保持 > +0.001 over 最佳 prompt-only 基线
+  ────────────────────────────────────────
+  检查: C2: 基线 seed1/seed3 对齐 OCR 评估（eval-only）
+  类型: 非训练
+  falsifying 条件: 运行 baseline seed1 和 seed3 的 textvqa_val_ocr 评估；若 seed
+
+    间方差导致 OCR16 delta 落入 stderr 重叠区间，则 Stage 2 决策的稳健性降低。
+  最小可接受增益: 确认 OCR16 > 所有 baseline seed 对齐评估
+  ────────────────────────────────────────
+  检查: C3: prompt 对齐训练变体
+  类型: 训练（如 C1 通过）
+  falsifying 条件: 训练时 prompt 精确匹配 textvqa_val_ocr 构造；若训练后
+    textvqa_val_ocr delta ≤ 0 或与当前 OCR16 无样本级胜利，则停止。
+  最小可接受增益: +0.003 exact_match over eval_ocr16_seed1_textvqa_val_ocr
+  ────────────────────────────────────────
+  检查: C4: 问题相关 OCR token 选择
+  类型: 训练（需离线审计）
+  falsifying 条件: 离线样本级审计：当前 OCR16 胜利的样本中，若 >10% 因所选
+  tokens
+    遗漏 gold-supporting OCR 而失败，则不训练。
+  最小可接受增益: +0.003 exact_match over OCR16
+    对齐评估，且样本证据显示净新增胜利
+  ────────────────────────────────────────
+  检查: C5: OCR dropout 消融
+  类型: 短运行/消融
+  falsifying 条件: 随机丢弃部分 OCR tokens 训练；若 textvqa_val_ocr 下降 > 0.001
+
+    且非 OCR textvqa_val 未恢复至 baseline seed2 水平，则停止。
+  最小可接受增益: +0.002 on textvqa_val_ocr 或 非 OCR textvqa_val 恢复至
+  baseline
+    seed2 同时保持 OCR 优势
+
+  非 OCR 方向（若 OCR 假设被削弱时的 pivot 选项）
+
+  检查: C6: LoRA 小范围搜索
+  类型: 训练
+  falsifying 条件: 仅在 prompt/eval 对齐可靠后启动；保守参数（低 LR、恒定
+    schedule）。若任何配置未超过当前最佳对齐评估的 +0.003，则拒绝该配置。
+  最小可接受增益: +0.003 over 当前最佳对齐评估
+  ────────────────────────────────────────
+  检查: C7: 训练步数/epoch 检查
+  类型: 训练
+  falsifying 条件: 延长 ocr16 或基线训练至 >1024 steps；若延长后 OCR16
+    对齐评估无提升或基线追上，则步数不是瓶颈。
+  最小可接受增益: +0.002 over 1024-step 对应结果
+
+  ---
+  未解决的重要提醒
+
+  - 所有新训练变体（C3/C4/C5/C6/C7）在启动前必须通过 Stage 4 决策门：即先完成 C1
+  和 C2，确认 OCR16 优势不是答案风格或 seed 方差的产物。
+  - ocr32 已明确 deferred，直到 Stage 4 规划选择具体 OCR 变体并完成 eval-only
+  或短运行检查。
+  - 可恢复失败分析仍阻塞：若用户希望推进 C4（问题相关 OCR 选择），需先获取
+  TextVQA 验证集 gold answers 和 OCR tokens 的本地缓存。
+
+  ---
+  DONE progress-ledger
+
+✻ Worked for 1m 35s
+
+────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────
+  [kimi-for-coding] █░░░░░░░░░ 11%
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+

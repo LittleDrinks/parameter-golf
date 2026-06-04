@@ -266,3 +266,36 @@ Stage 4 planning is now recorded without launching new training. Candidate varia
 - question-relevant OCR selection: require offline sample audit showing net OCR-dependent opportunity and no large loss of current OCR16 wins; training delta threshold `+0.003`.
 - OCR dropout: require short-run/ablation evidence that OCR eval is not degraded by more than `0.001` and non-OCR eval improves; acceptable gain is `+0.002` on OCR eval or baseline recovery on non-OCR eval while keeping OCR advantage.
 - answer-style eval-only control: stop or pivot if prompt-only baseline reaches within `0.001` of OCR16 aligned eval.
+
+## 2026-06-04 direction pivot: OCR no longer sole mainline
+
+User reviewed the current OCR-centered trajectory and judged simple OCR prompting unlikely to be sufficiently high-ceiling or ground-breaking. Orchestrator agreed to stop single-threading on OCR and to build a parallel direction portfolio.
+
+Actions this turn:
+
+- Dispatched read-only worker `pg-progress-ledger` through `panel-as-worker` to summarize existing ARA evidence. Initial sandboxed rmux connection failed; reran outside sandbox with approval. Worker made no file edits, no server access, no web search, and produced final capture at:
+
+```text
+ara/trace/worker-captures/pg-progress-ledger-final.txt
+```
+
+- Attempted Tavily/anysearch-style CLI search, but `tvly` had no API key in this environment. Used built-in web search instead, focusing on primary CVF/arXiv sources.
+- Updated `ara/logic/hypotheses.md` so OCR tokens are recorded as useful but not the sole mainline.
+- Updated `ara/trace/exploration_tree.yaml` with `q-portfolio-001`, separating non-OCR branches from `q-ocr-001`.
+
+Light literature findings:
+
+- TAP (CVPR 2021) reports that explicit scene-text-aware pretraining, with OCR, visual, and text alignment objectives, improves TextVQA by large absolute margins versus a non-TAP baseline. This supports text-aware alignment/data as a broader direction than raw OCR-token prompt inclusion.
+- LaTr (CVPR 2022) argues that language plus layout information is central for scene-text VQA, and reports sizeable TextVQA/ST-VQA gains. This supports layout/question-grounded token selection over first-N OCR token inclusion.
+- TextOCR (CVPR 2021) frames OCR quality and real-image scene-text annotations as a bottleneck for TextVQA/TextCaps, and uses improved OCR to improve TextVQA through PixelM4C. This supports OCR as an important component, but one whose value depends on detection/recognition quality and integration.
+
+Planning decision:
+
+- OCR remains active only behind cheap falsifying gates: answer-style controls, seed robustness controls, and sample-level OCR-dependence audits.
+- Non-OCR directions become active in parallel:
+  - answer-style/eval calibration on existing merged models,
+  - data augmentation / instruction-format audit,
+  - visual-grounding failure taxonomy from repaired sample artifact,
+  - LoRA/training-policy small sweep.
+
+No new server experiments or GPU runs were launched in this turn.
