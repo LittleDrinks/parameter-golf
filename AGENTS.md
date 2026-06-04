@@ -90,6 +90,27 @@ For each research step:
 6. Add a session note under `ara/trace/sessions/`.
 7. Promote or revise claims only when evidence supports it.
 
+## Compute Resource
+
+Primary compute is available through SSH alias:
+
+```bash
+ssh smYuHangLab2
+```
+
+Local SSH config currently maps this alias to user `zsm` on `58.199.164.190:50002` over IPv4. Use this server for GPU experiments, durable run artifacts, and experiment forensics.
+
+Known server layout:
+
+```text
+/home/zsm/parameter-golf              main code worktree
+/home/zsm/pg-worktrees/pg-harness     harness/code worktree used in prior runs
+/data/zsm/parameter-golf              artifact storage root
+/data/zsm/parameter-golf/runs/<id>    durable run logs/results
+```
+
+Default behavior is read-only inspection. Launch runs or edit server code only when the user explicitly asks, preferably by delegating to `panel-as-worker`.
+
 ## Server Records
 
 Heavy artifacts live on the server, not in this branch.

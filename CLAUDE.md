@@ -14,6 +14,20 @@ Help improve TextVQA / Qwen3-VL experiment quality by keeping decisions, evidenc
 - Keep large artifacts on the server and cite paths from ARA.
 - Ask before destructive git operations or deleting remote branches.
 
+## Compute Resource
+
+Use `ssh smYuHangLab2` for server-side GPU work and experiment forensics. The alias points to user `zsm` on `58.199.164.190:50002`.
+
+Important paths:
+
+```text
+/home/zsm/parameter-golf
+/home/zsm/pg-worktrees/pg-harness
+/data/zsm/parameter-golf/runs/<run_id>
+```
+
+Inspect first; launch or modify only when explicitly authorized. Keep large artifacts on the server and record paths in ARA.
+
 ## Skill Usage
 
 Use local project skills from `.codex/skills/`:
