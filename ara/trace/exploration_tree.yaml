@@ -1,0 +1,42 @@
+questions:
+  - id: q-harness-001
+    title: Can every run be reconstructed from structured evidence?
+    status: active
+    children:
+      - id: exp-harness-metrics
+        type: engineering
+        status: proposed
+        description: Save train metrics, eval metrics, config snapshot, and git state for each run.
+  - id: q-ocr-001
+    title: Do OCR tokens improve TextVQA exact match?
+    status: active
+    children:
+      - id: exp-ocr16
+        type: experiment
+        status: completed
+        config: configs/experiments/ocr16.yaml
+        run_id: ocr16_seed1
+        remote_run_root: /data/zsm/parameter-golf/runs/ocr16_seed1
+        result:
+          metric: textvqa_val exact_match
+          value: 0.7076800000000036
+          stderr: 0.006091340115678913
+          completed_steps: 1024
+          train_runtime_seconds: 3011.4045
+          interpretation: noisy loss with downward overall trend; no demonstrated improvement over baseline seed1; likely train/eval OCR prompt mismatch
+      - id: exp-ocr16-eval-ocr
+        type: analysis
+        status: proposed
+        description: Eval existing ocr16_seed1 merged model with TASK=textvqa_val_ocr to test prompt/eval alignment without retraining.
+      - id: exp-baseline-eval-ocr
+        type: analysis
+        status: proposed
+        description: Eval existing baseline merged models with TASK=textvqa_val_ocr for a fair OCR-at-eval comparison.
+      - id: exp-ocr32
+        type: experiment
+        status: proposed
+        config: configs/experiments/ocr32.yaml
+  - id: q-lora-001
+    title: Which LoRA settings improve accuracy under the same inference budget?
+    status: proposed
+    children: []

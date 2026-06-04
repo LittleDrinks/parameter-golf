@@ -1,0 +1,4 @@
+interface:
+  display_name: "Panel as Worker"
+  short_description: "Launch and monitor rmux/tmux pane workers with durable captures."
+  default_prompt: "Use panel-as-worker to launch, monitor, or recover pane-based worker agents."
