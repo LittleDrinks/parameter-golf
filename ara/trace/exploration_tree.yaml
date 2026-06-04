@@ -194,6 +194,7 @@ questions:
         worktree: /home/zsm/pg-worktrees/lora_lr2e5_seed1
         branch: exp/lora-lr2e5-seed1
         commit: 910bba64a914f6e9389e6dd9ed585c689de79e8c
+        eval_harness_commit: 9b2b51d
         config: /data/zsm/parameter-golf/runs/lora_lr2e5_seed1/config.yaml
         config_source: /home/zsm/pg-worktrees/lora_lr2e5_seed1/configs/experiments/lora_lr2e5.yaml
         remote_run_root: /data/zsm/parameter-golf/runs/lora_lr2e5_seed1
@@ -212,12 +213,23 @@ questions:
           - logs/prepare.stderr.log
           - logs/train.stdout.log
           - logs/train.stderr.log
+          - logs/eval.stdout.log
+          - logs/eval.stderr.log
+          - eval_harness_commit.txt
+          - eval_harness_diff.patch
           - status.json
           - config.yaml
         result:
-          status: running
-          current_stage: train
-          latest_progress: 113/1024 steps at 2026-06-05 00:20 Asia/Shanghai
+          status: eval_pending_after_repair
+          train: completed
+          merge: completed
+          first_eval_attempt: failed_no_metric
+          first_eval_failure: textvqa_val_ocr task still pointed at /storage/data/shiyd2023/datasets/textvqa, causing FileNotFoundError before model evaluation.
+          repair: Patched textvqa_val_ocr dataset_path to lmms-lab/textvqa in the isolated LoRA worktree, matching prior aligned OCR eval worktrees.
+          latest_verified_at: 2026-06-05 02:25 Asia/Shanghai
+        review_status:
+          eval_harness_patch: local orchestrator review completed; one-line dataset_path change only, same repair as prior aligned OCR eval branches; no metric interpreted until rerun succeeds.
+          training_config_patch: pending broader review before treating any positive metric as trusted.
         falsifying_check: Reject lr2e-5 if matched textvqa_val_ocr exact_match does not exceed the best aligned OCR baseline by at least +0.003, or if it fails to approach OCR16 seed1 textvqa_val_ocr = 0.7262000000000036.
   - id: q-portfolio-001
     title: What non-OCR directions should be explored in parallel?

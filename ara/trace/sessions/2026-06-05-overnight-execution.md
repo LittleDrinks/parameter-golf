@@ -52,3 +52,36 @@ Next:
 - Continue polling `lora_lr2e5_seed1`.
 - If it completes successfully, parse/copy result JSON, update `ara/evidence/results.csv`, update `exploration_tree.yaml`, archive logs/captures, and decide whether to start a second run or a prompt/control eval.
 - If it fails, record the failure evidence and launch the next plausible direction while respecting GPU concurrency.
+
+## Turn: 02:24-02:31 Asia/Shanghai
+
+Actions:
+
+- Resumed read-only server inspection after the escalation retry window reopened.
+- Verified `lora_lr2e5_seed1` reached `status=completed` at `2026-06-05T01:07:02+08:00`, but `result_path` was empty.
+- Inspected logs and artifacts:
+  - train completed and produced final adapter under `/data/zsm/parameter-golf/runs/lora_lr2e5_seed1/outputs/textvqa_qwen3vl_lora_lr2e5_seed1/final`.
+  - merge completed and produced merged model under `/data/zsm/parameter-golf/runs/lora_lr2e5_seed1/outputs/textvqa_qwen3vl_lora_lr2e5_seed1/merged`.
+  - first eval attempt wrote `logs/eval.stdout.log` and `logs/eval.stderr.log` but no results JSON.
+  - eval failed before model evaluation because `textvqa_val_ocr.yaml` still used `dataset_path: /storage/data/shiyd2023/datasets/textvqa`.
+- Applied the same eval dataset-path repair used by prior aligned OCR eval branches:
+  - worktree: `/home/zsm/pg-worktrees/lora_lr2e5_seed1`
+  - file: `lmms-eval/lmms_eval/tasks/textvqa/textvqa_val_ocr.yaml`
+  - change: `dataset_path: lmms-lab/textvqa`
+  - commit: `9b2b51d` (`Patch TextVQA OCR eval dataset path`)
+  - run-root evidence:
+    - `/data/zsm/parameter-golf/runs/lora_lr2e5_seed1/eval_harness_commit.txt`
+    - `/data/zsm/parameter-golf/runs/lora_lr2e5_seed1/eval_harness_diff.patch`
+- Checked GPUs at 02:25: no GPU had `memory.used < 1000 MiB`; matched eval rerun deferred.
+
+Interpretation:
+
+- This run is not yet a completed proof-of-idea because the matched eval metric is missing.
+- Training and merge artifacts are reusable; only the matched eval step needs rerun on a free GPU.
+- The eval harness patch was locally reviewed as a one-line dataset_path repair matching prior aligned OCR eval worktrees. Do not interpret a LoRA metric until rerun succeeds.
+
+Next:
+
+- Poll GPU availability.
+- When any GPU has `memory.used < 1000 MiB`, rerun only matched eval for `lora_lr2e5_seed1` using the repaired `textvqa_val_ocr` task and merged model path.
+- After eval, record exact_match in `ara/evidence/results.csv`, update the exploration tree, and choose the next direction.
