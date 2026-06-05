@@ -56,7 +56,7 @@ When the user approves an overnight loop with a hard stop, do not voluntarily st
 Current loop target:
 
 ```text
-Hard stop: 2026-06-05 08:00 Asia/Shanghai
+Hard stop: 2026-06-05 12:00 Asia/Shanghai
 Goal: continuously seek TextVQA exact_match improvement through full train + matched eval experiments.
 ```
 
@@ -64,8 +64,15 @@ Loop rules:
 
 - Keep looking for directions until the hard stop. If one idea fails, archive it and start the next plausible direction.
 - Default to one GPU job. Use at most two GPU jobs at once.
-- Poll `nvidia-smi`; launch only on GPUs with `memory.used < 1000 MiB`.
+- Default GPU launch rule: poll `nvidia-smi`; launch only on GPUs with `memory.used < 1000 MiB`.
+- User-approved GPU launch exception: when the user explicitly approves a specific exception after inspecting the server, a worker may launch on a GPU with existing memory use if all of the following hold:
+  - `GPU-Util` is approximately idle across repeated checks.
+  - Remaining memory is plausibly sufficient for the intended eval/run.
+  - The run is a bounded eval or otherwise explicitly approved by the user.
+  - The run records the exception rationale, current `nvidia-smi`, existing GPU processes, selected GPU, command, PID, logs, and result path under its run root.
+  - The worker must not kill, signal, or otherwise interfere with unrelated processes. If the exception run OOMs or collides, record the failure and stop rather than repeatedly retrying.
 - `smYuHangLab2` is a shared public server. Do not kill unrelated processes. Workers may only stop their own run-root PID recorded in `pid.txt`.
+- Codex remains the orchestrator. After identifying a usable GPU, delegate experiment launch and monitoring to `panel-as-worker` unless the user explicitly asks Codex to execute the run directly.
 - Run one experiment idea or run family per worktree and branch.
 - Commit atomically after meaningful code/config/record changes.
 - Archive worker panes and logs promptly under `ara/trace/worker-captures/`, then close stale rmux windows.
