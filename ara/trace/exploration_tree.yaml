@@ -253,10 +253,25 @@ questions:
     title: What non-OCR directions should be explored in parallel?
     status: active
     rationale: User judged OCR-only strategy too narrow; literature suggests OCR is useful but high-ceiling gains often come from text-aware pretraining, OCR-copy/layout modeling, extra data, and answer generation control rather than raw OCR-token inclusion alone.
+    literature_basis:
+      evidence_file: ara/evidence/literature/textvqa_external_sources.md
+      sources:
+        - id: LIT-TEXTVQA-LORRA
+          url: https://arxiv.org/abs/1904.08920
+          implication: OCR-conditioned reading is central to TextVQA; evaluate OCR ideas on OCR-enabled matched tasks.
+        - id: LIT-M4C
+          url: https://arxiv.org/abs/1911.06258
+          implication: Pointer/copy-style modeling and joint OCR/question/image context suggest plain OCR token concatenation is a limited approximation.
+        - id: LIT-TAP
+          url: https://arxiv.org/abs/2012.04638
+          implication: OCR-aware training objectives are higher ceiling than generation-length tweaks.
+        - id: LIT-LATR
+          url: https://arxiv.org/abs/2112.12494
+          implication: Layout-aware scene-text modeling motivates preserving OCR token spatial relationships.
     children:
       - id: exp-answer-style-controls
         type: analysis
-        status: active
+        status: weakened
         description: Eval-only controls for answer style, prompt wording, and generation length on existing merged models.
         falsifying_check: If baseline prompt/generation controls reach within 0.001 exact_match of OCR16 aligned eval, downgrade OCR training as the explanation for the current gain.
         cost: low; no training; existing merged models only
@@ -282,6 +297,38 @@ questions:
               baseline_ocr16_max16: 0.7262000000000036
               delta_vs_max16: 0.00018000000000029103
               interpretation: max_new_tokens=16 is not a material truncation bottleneck for OCR16 on textvqa_val_ocr; continue answer-style work only through prompt/system controls or baseline controls, not by increasing generation length.
+        current_read: max_new_tokens is a weak direction; finish already-running baseline seed3 max32 only for closure, then stop generation-length sweeps unless it unexpectedly reaches OCR16.
+      - id: exp-ocr-layout-serialization-feasibility
+        type: analysis
+        status: active
+        description: Inspect cached TextVQA data and current prompt-building code to determine whether OCR boxes/order/layout can be serialized into the training/eval prompt without a larger architecture rewrite.
+        literature_basis:
+          - LIT-M4C
+          - LIT-TAP
+          - LIT-LATR
+        falsifying_check: Stop if cached examples do not expose usable OCR boxes/order, or if train/eval code cannot share one deterministic serialization path in a dedicated worktree.
+        required_artifacts:
+          - field inventory for TextVQA OCR tokens, boxes, and ordering
+          - 20-sample serialization preview including question, original OCR, serialized OCR, and answer
+          - concrete patch plan for shared train/eval serialization helper
+        next_if_passes: full train plus matched eval of layout-serialized OCR prompt, requiring at least +0.003 exact_match over OCR16 aligned eval.
+        worker_candidate: answer-layout-feasibility-worker
+      - id: exp-ocr-layout-serialized-training
+        type: experiment
+        status: planned
+        description: Train with OCR token text plus coarse spatial/layout serialization, then evaluate on a matched OCR-layout task.
+        depends_on: exp-ocr-layout-serialization-feasibility
+        falsifying_check: Reject if matched eval does not exceed OCR16 aligned eval by +0.003 or if gains come with a non-OCR eval regression larger than the OCR eval improvement.
+        minimum_acceptable_delta: +0.003 exact_match over eval_ocr16_seed1_textvqa_val_ocr.
+      - id: exp-ocr-win-curriculum
+        type: analysis
+        status: planned
+        description: Use repaired Stage 3 sample evidence to build OCR-benefit and OCR-regression subsets for curriculum/reweighting rather than naive all-sample OCR training.
+        literature_basis:
+          - LIT-M4C
+          - LIT-TAP
+        falsifying_check: Stop if OCR-benefit/regression subsets cannot be reproduced from durable sample artifacts or if subset labels mostly reflect answer-style artifacts rather than OCR grounding.
+        next_if_passes: train with modest reweighting of OCR-benefit examples plus regression guards from baseline-better examples.
       - id: exp-answer-style-audit
         type: analysis
         status: completed
