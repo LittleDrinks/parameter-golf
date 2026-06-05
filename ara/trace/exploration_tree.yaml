@@ -297,7 +297,30 @@ questions:
               baseline_ocr16_max16: 0.7262000000000036
               delta_vs_max16: 0.00018000000000029103
               interpretation: max_new_tokens=16 is not a material truncation bottleneck for OCR16 on textvqa_val_ocr; continue answer-style work only through prompt/system controls or baseline controls, not by increasing generation length.
-        current_read: max_new_tokens is a weak direction; finish already-running baseline seed3 max32 only for closure, then stop generation-length sweeps unless it unexpectedly reaches OCR16.
+          - id: answer_style_baseline_seed3_max32
+            variable: max_new_tokens
+            value: 32
+            model: /data/zsm/parameter-golf/outputs/textvqa_qwen3vl_lora_seed3/merged
+            worktree: /home/zsm/pg-worktrees/answer_style_max32
+            branch: exp/answer-style-max32
+            commit: 93f7af7bf0df4eaeb2d5dc86d13dfa4c6833005f
+            remote_run_root: /data/zsm/parameter-golf/runs/answer_style_baseline_seed3_max32_20260605_110052
+            worker:
+              session: pg-answer-style-baseline-max32-worker
+              prompt: ara/trace/worker-captures/pg-answer-style-baseline-max32-worker-prompt.md
+              final_capture: ara/trace/worker-captures/pg-answer-style-baseline-max32-worker-final.txt
+              report: ara/trace/worker-captures/pg-answer-style-baseline-max32-worker-report.md
+            result:
+              metric: textvqa_val_ocr exact_match
+              value: 0.715660000000004
+              stderr: approx 0.006015
+              result_path: /data/zsm/parameter-golf/runs/answer_style_baseline_seed3_max32_20260605_110052/eval/textvqa_qwen3vl_lora_seed3__merged/20260605_110101_results.json
+              baseline_seed3_max16: 0.7154200000000039
+              delta_vs_max16: 0.00024000000000001798
+              ocr16_max16: 0.7262000000000036
+              gap_to_ocr16_max16: -0.01053999999999955
+              interpretation: Increasing generation length does not let the strongest baseline approach OCR16; close the max_new_tokens subdirection.
+        current_read: max_new_tokens is a weak direction for both OCR16 and baseline seed3; stop generation-length sweeps and redirect to layout-aware OCR representation or OCR-benefit curriculum.
       - id: exp-ocr-layout-serialization-feasibility
         type: analysis
         status: active
