@@ -260,6 +260,28 @@ questions:
         description: Eval-only controls for answer style, prompt wording, and generation length on existing merged models.
         falsifying_check: If baseline prompt/generation controls reach within 0.001 exact_match of OCR16 aligned eval, downgrade OCR training as the explanation for the current gain.
         cost: low; no training; existing merged models only
+        completed_controls:
+          - id: answer_style_ocr16_max32
+            variable: max_new_tokens
+            value: 32
+            model: /data/zsm/parameter-golf/runs/ocr16_seed1/outputs/merged
+            worktree: /home/zsm/pg-worktrees/answer_style_max32
+            branch: exp/answer-style-max32
+            commit: 93f7af7bf0df4eaeb2d5dc86d13dfa4c6833005f
+            remote_run_root: /data/zsm/parameter-golf/runs/answer_style_ocr16_max32_20260605_101647
+            worker:
+              session: pg-answer-style-max32-worker
+              prompt: ara/trace/worker-captures/pg-answer-style-max32-worker-prompt.md
+              final_capture: ara/trace/worker-captures/pg-answer-style-max32-worker-final.txt
+              report: ara/trace/worker-captures/pg-answer-style-max32-worker-report.md
+            result:
+              metric: textvqa_val_ocr exact_match
+              value: 0.7263800000000038
+              stderr: 0.005937294789201627
+              result_path: /data/zsm/parameter-golf/runs/answer_style_ocr16_max32_20260605_101647/eval/outputs__merged/20260605_101712_results.json
+              baseline_ocr16_max16: 0.7262000000000036
+              delta_vs_max16: 0.00018000000000029103
+              interpretation: max_new_tokens=16 is not a material truncation bottleneck for OCR16 on textvqa_val_ocr; continue answer-style work only through prompt/system controls or baseline controls, not by increasing generation length.
       - id: exp-answer-style-audit
         type: analysis
         status: completed
