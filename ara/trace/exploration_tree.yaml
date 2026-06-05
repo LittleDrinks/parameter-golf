@@ -323,35 +323,77 @@ questions:
         current_read: max_new_tokens is a weak direction for both OCR16 and baseline seed3; stop generation-length sweeps and redirect to layout-aware OCR representation or OCR-benefit curriculum.
       - id: exp-ocr-layout-serialization-feasibility
         type: analysis
-        status: active
+        status: blocked
         description: Inspect cached TextVQA data and current prompt-building code to determine whether OCR boxes/order/layout can be serialized into the training/eval prompt without a larger architecture rewrite.
         literature_basis:
           - LIT-M4C
           - LIT-TAP
           - LIT-LATR
         falsifying_check: Stop if cached examples do not expose usable OCR boxes/order, or if train/eval code cannot share one deterministic serialization path in a dedicated worktree.
+        worktree: /home/zsm/pg-worktrees/ocr_layout_feasibility
+        branch: exp/ocr-layout-feasibility
+        commit: 101959c882dd9d05be79668f80456da038c01c77
+        remote_run_root: /data/zsm/parameter-golf/runs/analysis_ocr_layout_feasibility_20260605_112829
+        worker:
+          session: pg-ocr-layout-feasibility-worker
+          prompt: ara/trace/worker-captures/pg-ocr-layout-feasibility-worker-prompt.md
+          final_capture: ara/trace/worker-captures/pg-ocr-layout-feasibility-worker-final.txt
+          report: ara/trace/worker-captures/pg-ocr-layout-feasibility-worker-report.md
         required_artifacts:
           - field inventory for TextVQA OCR tokens, boxes, and ordering
           - 20-sample serialization preview including question, original OCR, serialized OCR, and answer
           - concrete patch plan for shared train/eval serialization helper
-        next_if_passes: full train plus matched eval of layout-serialized OCR prompt, requiring at least +0.003 exact_match over OCR16 aligned eval.
-        worker_candidate: answer-layout-feasibility-worker
+        result:
+          feasible: false
+          blocker: ocr_bounding_boxes_missing
+          field_inventory: /data/zsm/parameter-golf/runs/analysis_ocr_layout_feasibility_20260605_112829/field_inventory.json
+          status_json: /data/zsm/parameter-golf/runs/analysis_ocr_layout_feasibility_20260605_112829/status.json
+          patch_plan: /data/zsm/parameter-golf/runs/analysis_ocr_layout_feasibility_20260605_112829/patch_plan.md
+          key_finding: Cached `lmms-lab/textvqa` exposes flat `ocr_tokens`, image dimensions, and answers, but no OCR boxes/confidence/spatial metadata; `image_width`/`image_height` are insufficient without boxes.
+          interpretation: Layout-aware OCR serialization remains plausible from literature, but the current cache cannot support it. Unblock requires original TextVQA OCR JSON/MMF imdb records or re-OCR with boxes.
+        next_if_unblocked: rerun field inventory against verified OCR geometry source, then full train plus matched eval of layout-serialized OCR prompt requiring at least +0.003 exact_match over OCR16 aligned eval.
+      - id: exp-textvqa-ocr-geometry-acquisition
+        type: analysis
+        status: active
+        description: Locate, cache outside git, and schema-check original TextVQA OCR geometry records that include OCR token text plus bounding boxes.
+        external_basis:
+          evidence_file: ara/evidence/external/textvqa_ocr_geometry_sources.md
+          candidate_sources:
+            - EXT-TEXTVQA-SITE
+            - EXT-FBA-ANNOTATION-URLS
+            - EXT-MMF-PYTHIA-IMDB
+        depends_on: exp-ocr-layout-serialization-feasibility
+        falsifying_check: Stop if no downloadable/local artifact can be verified to contain token text plus boxes keyed by image_id/question_id, or if the only available route is a full re-OCR pass longer than the current hard-stop window.
+        required_artifacts:
+          - source URL/path inventory
+          - local external artifact paths under /data/zsm/parameter-golf/external/textvqa/
+          - file size and sha256 for any downloaded artifact
+          - schema/key sample showing whether OCR text and boxes are present
+          - join plan to existing `lmms-lab/textvqa` examples by image_id or question_id
+        next_if_passes: convert or join OCR geometry into a lightweight sidecar and rerun `exp-ocr-layout-serialization-feasibility`.
+        worker_candidate: textvqa-ocr-geometry-worker
       - id: exp-ocr-layout-serialized-training
         type: experiment
-        status: planned
+        status: blocked
         description: Train with OCR token text plus coarse spatial/layout serialization, then evaluate on a matched OCR-layout task.
-        depends_on: exp-ocr-layout-serialization-feasibility
+        depends_on: exp-textvqa-ocr-geometry-acquisition
         falsifying_check: Reject if matched eval does not exceed OCR16 aligned eval by +0.003 or if gains come with a non-OCR eval regression larger than the OCR eval improvement.
         minimum_acceptable_delta: +0.003 exact_match over eval_ocr16_seed1_textvqa_val_ocr.
       - id: exp-ocr-win-curriculum
         type: analysis
-        status: planned
+        status: active
         description: Use repaired Stage 3 sample evidence to build OCR-benefit and OCR-regression subsets for curriculum/reweighting rather than naive all-sample OCR training.
         literature_basis:
           - LIT-M4C
           - LIT-TAP
         falsifying_check: Stop if OCR-benefit/regression subsets cannot be reproduced from durable sample artifacts or if subset labels mostly reflect answer-style artifacts rather than OCR grounding.
+        required_artifacts:
+          - reproducible subset definitions from Stage 3 sample evidence
+          - counts for OCR16-better, baseline-better, and tied samples under proposed filters
+          - small training patch plan for weighting/sampling only if subset labels are stable
+          - regression guard list based on baseline-better samples
         next_if_passes: train with modest reweighting of OCR-benefit examples plus regression guards from baseline-better examples.
+        worker_candidate: ocr-win-curriculum-worker
       - id: exp-answer-style-audit
         type: analysis
         status: completed
