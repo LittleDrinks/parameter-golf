@@ -86,16 +86,22 @@ Details for `lora_lr2e5_seed1`:
 
 ## 6. Git and push status
 
-- Records branch local commits created:
+- Records branch local commits created before first final-report push:
   - `446bed8` `Record overnight LoRA launch`
   - `8a13024` `Record LoRA eval repair`
   - `70b5a56` `Record LoRA config review`
-- Records branch status before final report commit: ahead of `origin/ara-records-only` by 3.
+  - `c866457` `Add overnight final report`
+- First final push status:
+  - command: `git push origin ara-records-only exp/lora-lr2e5-seed1`
+  - result: success
+  - records branch: `02a6782..c866457 ara-records-only -> ara-records-only`
+  - experiment branch: `exp/lora-lr2e5-seed1` created on origin
 - Server experiment branch:
   - branch: `exp/lora-lr2e5-seed1`
   - commits: `910bba64a914f6e9389e6dd9ed585c689de79e8c`, `9b2b51d`
   - server-side push not attempted by design; server has no GitHub credentials.
-- Remote push status after this final report still needs to be recorded by the final commit/push step.
+  - branch was fetched locally from `smYuHangLab2:/home/zsm/pg-worktrees/lora_lr2e5_seed1` and pushed from the credentialed local environment.
+- This file was then updated to record the successful push; final push status for this push-status update is reported in the assistant final response.
 
 ## 7. Next recommended experiments
 
