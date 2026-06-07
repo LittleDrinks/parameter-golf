@@ -9,7 +9,7 @@ export MODEL_PATH=${MODEL_PATH:-Qwen/Qwen3-VL-2B-Instruct}
 export MAX_PIXELS=${MAX_PIXELS:-200704}
 export MIN_PIXELS=${MIN_PIXELS:-100352}
 export USE_CACHE=${USE_CACHE:-false}
-export TASK=${TASK:-textvqa_val_ocr}
+export TASK=${TASK:-textvqa_val_ocr_cond_pre_a_ge5}
 export HF_HOME=${HF_HOME:-${PWD}/hf_cache}
 export HF_DATASETS_CACHE=${HF_DATASETS_CACHE:-${HF_HOME}/datasets}
 

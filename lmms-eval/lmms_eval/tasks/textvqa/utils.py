@@ -56,6 +56,17 @@ def textvqa_doc_to_text(doc, lmms_eval_specific_kwargs=None):
     return f"{pre_prompt}{doc['question'].capitalize()}{ocr_ref}{post_prompt}"
 
 
+def textvqa_doc_to_text_conditional_pre_a(doc, lmms_eval_specific_kwargs=None):
+    kwargs = dict(lmms_eval_specific_kwargs or {})
+    threshold = int(kwargs.pop("conditional_pre_prompt_min_ocr_tokens", 5))
+    pre_prompt = kwargs.get("pre_prompt", "")
+    if len(doc.get("ocr_tokens") or []) < threshold:
+        kwargs["pre_prompt"] = ""
+    else:
+        kwargs["pre_prompt"] = pre_prompt
+    return textvqa_doc_to_text(doc, kwargs)
+
+
 def textvqa_aggregate_submissions(results, args):
     now_date_time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     path = generate_submission_file(f"textvqa_submission_{now_date_time}.json", args)

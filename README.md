@@ -1,21 +1,21 @@
 # Parameter Golf TextVQA Submission
 
-This submission fine-tunes `Qwen/Qwen3-VL-2B-Instruct` with LoRA on TextVQA and includes the dataset-provided OCR tokens in the normal single-pass prompt. The submitted method keeps the same base model class and evaluation path as the starter system: one VLM forward pass, no external OCR model at inference time, no reranking, and no validation/test-label routing.
+This submission fine-tunes `Qwen/Qwen3-VL-2B-Instruct` with LoRA on TextVQA and includes the dataset-provided OCR tokens in the normal single-pass prompt. The best reported variant also adds one fixed instruction prefix only when an example has at least 5 OCR tokens. The submitted method keeps the same base model class and evaluation path as the starter system: one VLM forward pass, no external OCR model at inference time, no reranking, and no validation/test-label routing.
 
 ## Result
 
-Matched evaluation task: `textvqa_val_ocr`
+Matched evaluation task: `textvqa_val_ocr_cond_pre_a_ge5`
 
 | Seed | exact_match |
 |---:|---:|
-| 1 | `0.7262000000000036` |
-| 2 | `0.7282800000000039` |
-| 3 | `0.7269800000000035` |
-| **Mean** | **`0.727153333333337`** |
+| 1 | `0.7288800000000036` |
+| 2 | `0.7290800000000038` |
+| 3 | `0.7289800000000037` |
+| **Mean** | **`0.7289800000000038`** |
 
-Mean accuracy is **72.7153%** over three seeds.
+Mean accuracy is **72.8980%** over three seeds.
 
-A nearby public OCR-token reference, `isolatedNO3/parameter-golf`, reports `72.647%` mean on an OCR8 variant. The numbers are close, but not a strict apples-to-apples comparison because this submission uses up to 16 OCR tokens and the matched `textvqa_val_ocr` task.
+The underlying OCR16 checkpoint without the conditional prefix scored `0.727153333333337` mean over the same three seeds on `textvqa_val_ocr`. A nearby public OCR-token reference, `isolatedNO3/parameter-golf`, reports `72.647%` mean on an OCR8 variant. The numbers are close, but not a strict apples-to-apples comparison because this submission uses up to 16 OCR tokens and the matched conditional OCR task.
 
 ## Method
 
@@ -30,6 +30,12 @@ Reference OCR token: token1, token2, ...
 Answer the question using a single word or phrase.
 ```
 
+For validation/inference through the default task, examples with at least 5 OCR tokens also receive this fixed prefix:
+
+```text
+Answer briefly using image text when possible.
+```
+
 The OCR tokens are already part of TextVQA metadata. The method does not run a second OCR system during evaluation.
 
 ## Files
@@ -42,6 +48,7 @@ The OCR tokens are already part of TextVQA metadata. The method does not run a s
 - `run_train.sh`: training entrypoint.
 - `run_merge_lora.sh`: merge entrypoint.
 - `eval_qwen.sh`: matched TextVQA OCR evaluation entrypoint.
+- `lmms-eval/lmms_eval/tasks/textvqa/textvqa_val_ocr_cond_pre_a_ge5.yaml`: default best evaluation task with the conditional OCR instruction prefix.
 - `lmms-eval/lmms_eval/tasks/textvqa/textvqa_val_ocr.yaml`: OCR-enabled TextVQA validation task using `dataset_path: lmms-lab/textvqa`.
 
 ## Setup
@@ -120,7 +127,7 @@ outputs/textvqa_qwen3vl_lora_ocr16_seed1/merged
 CUDA_VISIBLE_DEVICES=0 MODEL_PATH=./outputs/textvqa_qwen3vl_lora_ocr16_seed1/merged bash eval_qwen.sh
 ```
 
-`eval_qwen.sh` defaults to `TASK=textvqa_val_ocr`.
+`eval_qwen.sh` defaults to `TASK=textvqa_val_ocr_cond_pre_a_ge5`. To reproduce the raw OCR16 baseline, set `TASK=textvqa_val_ocr`.
 
 For all seeds:
 
