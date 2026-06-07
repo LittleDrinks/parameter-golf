@@ -9,7 +9,9 @@ export MODEL_PATH=${MODEL_PATH:-Qwen/Qwen3-VL-2B-Instruct}
 export MAX_PIXELS=${MAX_PIXELS:-200704}
 export MIN_PIXELS=${MIN_PIXELS:-100352}
 export USE_CACHE=${USE_CACHE:-false}
-export TASK=${TASK:-textvqa_val}
+export TASK=${TASK:-textvqa_val_ocr}
+export HF_HOME=${HF_HOME:-${PWD}/hf_cache}
+export HF_DATASETS_CACHE=${HF_DATASETS_CACHE:-${HF_HOME}/datasets}
 
 python -c "import torch; print('CUDA available:', torch.cuda.is_available()); [print(f'  GPU {i}: {torch.cuda.get_device_name(i)}') for i in range(torch.cuda.device_count())]"
 

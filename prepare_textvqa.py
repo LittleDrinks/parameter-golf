@@ -6,7 +6,7 @@ from collections import Counter
 from glob import glob
 
 import yaml
-from datasets import Dataset
+from datasets import Dataset, load_dataset
 
 from lmms_eval.tasks._task_utils.vqa_eval_metric import EvalAIAnswerProcessor
 
@@ -63,11 +63,16 @@ def main():
     args = parser.parse_args()
     cfg = load_config(args.config)
 
-    files = sorted(glob(cfg["data_path"]))
-    if not files:
-        raise FileNotFoundError(f"No parquet files matched data_path={cfg['data_path']}")
+    data_path = cfg["data_path"]
+    if "*" in data_path or data_path.endswith(".parquet"):
+        files = sorted(glob(data_path))
+        if not files:
+            raise FileNotFoundError(f"No parquet files matched data_path={data_path}")
+        ds = Dataset.from_parquet(files)
+    else:
+        split = cfg.get("data_split", "train")
+        ds = load_dataset(data_path, split=split)
 
-    ds = Dataset.from_parquet(files)
     ds = ds.shuffle(seed=cfg["seed"])
     max_samples = int(cfg.get("max_train_samples", 0))
     if max_samples > 0:

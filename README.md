@@ -1,98 +1,85 @@
-# TextVQA Qwen3-VL LoRA Baseline
+# Parameter Golf TextVQA Submission
 
-This repository contains a small VLM fine-tuning baseline for TextVQA. The current implementation fine-tunes `Qwen3-VL-2B-Instruct` with LoRA, but submissions may use any training structure or adaptation method.
+This submission fine-tunes `Qwen/Qwen3-VL-2B-Instruct` with LoRA on TextVQA and includes the dataset-provided OCR tokens in the normal single-pass prompt. The submitted method keeps the same base model class and evaluation path as the starter system: one VLM forward pass, no external OCR model at inference time, no reranking, and no validation/test-label routing.
 
-**Deadline:** 3 days.
+## Result
 
-## Requirements
+Matched evaluation task: `textvqa_val_ocr`
 
-- Training must finish within 1 hour on 2080Ti (1 or 2 GPUs are both acceptable).
-- Test-time latency and FLOPs must be no more than 1.1x the original base model.
-- The submitted model may use LoRA, full fine-tuning, adapters, prompt tuning, or another method, as long as the evaluation budget is respected.
-- Final results should be reported over 3 seeds.
+| Seed | exact_match |
+|---:|---:|
+| 1 | `0.7262000000000036` |
+| 2 | `0.7282800000000039` |
+| 3 | `0.7269800000000035` |
+| **Mean** | **`0.727153333333337`** |
 
-The final submission should include:
+Mean accuracy is **72.7153%** over three seeds.
 
-- `README.md`
-- `run_prepare.sh`
-- `run_train.sh`
-- `eval_qwen.sh`
-- Merge script if needed, for example `run_merge_lora.sh` and `merge_lora.py`
-- Any required config and source files used by those scripts
+A nearby public OCR-token reference, `isolatedNO3/parameter-golf`, reports `72.647%` mean on an OCR8 variant. The numbers are close, but not a strict apples-to-apples comparison because this submission uses up to 16 OCR tokens and the matched `textvqa_val_ocr` task.
+
+## Method
+
+- Base model: `Qwen/Qwen3-VL-2B-Instruct`
+- Adaptation: LoRA
+- Train dataset: `lmms-lab/textvqa`, train split
+- Eval dataset/task: `lmms-lab/textvqa`, validation split via `textvqa_val_ocr`
+- Prompt change: append up to the first 16 dataset-provided OCR tokens to the question:
+
+```text
+Reference OCR token: token1, token2, ...
+Answer the question using a single word or phrase.
+```
+
+The OCR tokens are already part of TextVQA metadata. The method does not run a second OCR system during evaluation.
 
 ## Files
 
-- `configs/vlm_textvqa_lora.yaml`: training configuration.
-- `prepare_textvqa.py`: prepares and caches TextVQA prompts.
+- `configs/vlm_textvqa_lora.yaml`: OCR16 LoRA training configuration.
+- `prepare_textvqa.py`: builds seed-specific prepared training data with OCR16 prompts.
 - `train_textvqa_qwen3vl.py`: LoRA fine-tuning script.
+- `merge_lora.py`: merges the LoRA adapter into the base model.
 - `run_prepare.sh`: data preparation entrypoint.
-- `run_train.sh`: 2-GPU training entrypoint.
-- `run_merge_lora.sh`: merges a LoRA adapter into the base model.
-- `eval_qwen.sh`: TextVQA evaluation entrypoint based on `lmms-eval`.
-
-## Data And Model
-
-The default config uses:
-
-- **Model:** `Qwen3-VL-2B-Instruct` (local path or Hugging Face)
-- **Dataset:** TextVQA from Hugging Face (`lmms-lab/textvqa`). You can also point `data_path` in the config to local `*.parquet` files.
-
-```yaml
-model_path: Qwen/Qwen3-VL-2B-Instruct
-data_path: lmms-lab/textvqa
-```
-
-Prepared data is saved under `data/prepared_textvqa_qwen3vl_seed{seed}`. Training outputs are saved under `outputs/textvqa_qwen3vl_lora_seed{seed}`.
-
-The default prompt does not include dataset-provided OCR tokens.
-
-## Base Model Performance
-
-The original `Qwen3-VL-2B-Instruct` (without fine-tuning) achieves the following on `textvqa_val`:
-
-| Model | exact_match |
-|-------|-------------|
-| Qwen3-VL-2B-Instruct | **69.84%** |
-
-## Baseline (LoRA Fine-tuned) Performance
-
-This LoRA fine-tuning baseline achieves the following on `textvqa_val` across 3 seeds:
-
-| Seed | exact_match |
-|------|-------------|
-| 1    | 70.63%      |
-| 2    | 70.73%      |
-| 3    | 70.67%      |
-| **Mean** | **70.68%** |
-
-> This is a simple baseline. Students are expected to surpass this score. Achieving a comparable result with better code quality and innovative ideas is also acceptable.
-
-> **Note on GPU environment:** The baseline results above were obtained using 2 GPUs. This is provided for reference only. If you only have a single-GPU environment, don't worry — we will fairly compare your code against this simple LoRA baseline using a single GPU as well.
+- `run_train.sh`: training entrypoint.
+- `run_merge_lora.sh`: merge entrypoint.
+- `eval_qwen.sh`: matched TextVQA OCR evaluation entrypoint.
+- `lmms-eval/lmms_eval/tasks/textvqa/textvqa_val_ocr.yaml`: OCR-enabled TextVQA validation task using `dataset_path: lmms-lab/textvqa`.
 
 ## Setup
 
-### Environment
-
-You may use the pre-configured shared environment, or install dependencies yourself:
-
 ```bash
 pip install -r requirements.txt
-cd lmms-eval && pip install -e . && cd ..
+cd lmms-eval
+pip install -e .
+cd ..
 ```
 
-> If you install your own environment, **include your `requirements.txt`** in the submission.
+Recommended cache environment:
 
-### Coding Style
+```bash
+export HF_HOME=${HF_HOME:-$PWD/hf_cache}
+export HF_DATASETS_CACHE=${HF_DATASETS_CACHE:-$HF_HOME/datasets}
+```
 
-You are free to use any workflow (including vibe coding tools like Claude Code, Cursor, GitHub Copilot, etc.) as long as the submitted code is clean, reproducible, and runs correctly.
+On mirrors or shared servers, set `HF_ENDPOINT` as needed.
 
-## Quick Start
+## Reproduce
 
-### 1. Prepare data
+### 1. Prepare Data
 
 ```bash
 SEED=1 bash run_prepare.sh
 ```
+
+The config defaults to:
+
+```yaml
+data_path: lmms-lab/textvqa
+data_split: train
+use_ocr_tokens: true
+max_ocr_tokens: 16
+```
+
+Local parquet globs are still supported by setting `data_path` to a `*.parquet` pattern.
 
 ### 2. Train
 
@@ -100,7 +87,13 @@ SEED=1 bash run_prepare.sh
 SEED=1 bash run_train.sh
 ```
 
-For 3 seeds:
+The default output for seed 1 is:
+
+```text
+outputs/textvqa_qwen3vl_lora_ocr16_seed1/final
+```
+
+For all three seeds:
 
 ```bash
 for seed in 1 2 3; do
@@ -109,28 +102,59 @@ for seed in 1 2 3; do
 done
 ```
 
-Training is controlled by `max_steps` and `max_train_seconds` in `configs/vlm_textvqa_lora.yaml`.
-
-### 3. Merge LoRA
+### 3. Merge
 
 ```bash
 SEED=1 bash run_merge_lora.sh
 ```
 
-The merged model is saved to `outputs/textvqa_qwen3vl_lora_seed1/merged` by default.
+The merged model for seed 1 is saved to:
+
+```text
+outputs/textvqa_qwen3vl_lora_ocr16_seed1/merged
+```
 
 ### 4. Evaluate
 
-Evaluate the merged model:
-
 ```bash
-# MODEL_PATH=./outputs/textvqa_qwen3vl_lora_seed1/merged bash eval_qwen.sh
-CUDA_VISIBLE_DEVICES=0 MODEL_PATH=./outputs/textvqa_qwen3vl_lora_seed1/merged bash eval_qwen.sh
+CUDA_VISIBLE_DEVICES=0 MODEL_PATH=./outputs/textvqa_qwen3vl_lora_ocr16_seed1/merged bash eval_qwen.sh
 ```
 
-Evaluate the base model:
+`eval_qwen.sh` defaults to `TASK=textvqa_val_ocr`.
+
+For all seeds:
 
 ```bash
-# MODEL_PATH=Qwen/Qwen3-VL-2B-Instruct bash eval_qwen.sh
-CUDA_VISIBLE_DEVICES=0 MODEL_PATH=Qwen/Qwen3-VL-2B-Instruct bash eval_qwen.sh
+for seed in 1 2 3; do
+  SEED=$seed bash run_merge_lora.sh
+  CUDA_VISIBLE_DEVICES=0 MODEL_PATH=./outputs/textvqa_qwen3vl_lora_ocr16_seed${seed}/merged \
+    bash eval_qwen.sh
+done
 ```
+
+## Training Budget
+
+The default config keeps the starter budget:
+
+```yaml
+max_steps: 1024
+max_train_seconds: 3600
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+```
+
+The evaluation uses the same single-pass image budget:
+
+```bash
+MAX_PIXELS=200704
+MIN_PIXELS=100352
+```
+
+## Notes
+
+- Final reporting should use the three-seed mean above, not a single seed.
+- This submission intentionally avoids larger models, multi-pass image crops, external inference-time rerankers, and validation-answer priors because those would violate the intended test-time budget or leakage constraints.
+- If a local environment already has the model and dataset cached, set `HF_HOME` and `HF_DATASETS_CACHE` to those cache locations before running the scripts.
